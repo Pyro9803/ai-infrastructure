@@ -1,0 +1,12 @@
+project_id       = 
+instance_name    = 
+database_version = 
+database_tier    = 
+db_disk_size     = 
+db_disk_type     = 
+gke_cluster_name = 
+gke_node_pool_size = 
+gke_cpu_machine_type = 
+gke_enable_gpu_pool = 
+gke_gpu_machine_type = 
+gke_gpu_accelerator_type = 

@@ -1,3 +1,21 @@
+resource "google_service_account" "gke_node_sa" {
+  account_id   = "${var.cluster_name}-node-sa"
+  display_name = "GKE Node Service Account for ${var.cluster_name}"
+}
+
+resource "google_project_iam_member" "gke_node_sa_roles" {
+  for_each = toset([
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/monitoring.viewer",
+    "roles/stackdriver.resourceMetadata.writer"
+  ])
+
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.gke_node_sa.email}"
+}
+
 resource "google_container_cluster" "gke_cluster" {
   name                     = var.cluster_name
   location                 = var.region
@@ -5,6 +23,13 @@ resource "google_container_cluster" "gke_cluster" {
   initial_node_count       = 1
   network                  = var.network
   subnetwork               = var.subnetwork
+
+  node_config {
+    disk_type    = "pd-standard"
+    disk_size_gb = 30
+  }
+
+  deletion_protection = false
 }
 
 resource "google_container_node_pool" "cpu_pool" {
@@ -14,14 +39,14 @@ resource "google_container_node_pool" "cpu_pool" {
   node_count = var.node_pool_size
 
   node_config {
-    preemptible  = true
-    machine_type = var.cpu_machine_type
-
-    service_account = google_service_account.default.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
+    preemptible     = true
+    machine_type    = var.cpu_machine_type
+    disk_type       = "pd-standard"
+    disk_size_gb    = 30
+    service_account = google_service_account.gke_node_sa.email
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
   }
+
 }
 
 resource "google_container_node_pool" "gpu_pool" {
@@ -29,23 +54,20 @@ resource "google_container_node_pool" "gpu_pool" {
   name       = "gpu-pool"
   location   = var.location
   cluster    = google_container_cluster.gke_cluster.name
-  node_count = 0 # Start with 0 nodes for autoscaling
+  node_count = 0
 
   node_config {
     machine_type = var.gpu_machine_type
-    disk_size_gb = 200
-    disk_type    = "pd-ssd"
+    disk_size_gb = var.gpu_disk_size_gb
+    disk_type    = var.gpu_disk_type
     spot         = var.gpu_spot
 
-    # Service account (use default if not provided)
-    service_account = var.node_service_account_email
+    service_account = google_service_account.gke_node_sa.email
 
-    # OAuth scopes
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
 
-    # L4 GPU configuration
     guest_accelerator {
       type  = var.gpu_accelerator_type
       count = var.gpu_accelerator_count
@@ -56,26 +78,22 @@ resource "google_container_node_pool" "gpu_pool" {
       gpu-type  = var.gpu_accelerator_type
     }
 
-    # Taint to ensure only GPU workloads run on these nodes
     taint {
       key    = "nvidia.com/gpu-type"
-      value  = "l4"
+      value  = var.gpu_accelerator_type
       effect = "NO_SCHEDULE"
     }
 
-    # Shielded VM features
     shielded_instance_config {
       enable_secure_boot          = true
       enable_integrity_monitoring = true
     }
 
-    # Workload Identity
     workload_metadata_config {
       mode = "GKE_METADATA"
     }
   }
 
-  # Auto-scaling configuration
   autoscaling {
     min_node_count = var.gpu_min_nodes
     max_node_count = var.gpu_max_nodes
