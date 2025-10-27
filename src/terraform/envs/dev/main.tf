@@ -35,10 +35,34 @@ module "gke" {
 module "cloud_sql_db" {
   source = "../../modules/database"
 
-  instance_name    = var.instance_name
   region           = var.region
-  database_version = var.database_version
-  database_tier    = var.database_tier
-  disk_size        = var.db_disk_size
-  disk_type        = var.db_disk_type
+  db_version       = var.db_version
+  db_tier          = var.db_tier
+  db_disk_size     = var.db_disk_size
+  db_disk_type     = var.db_disk_type
 }
+
+module "artifact_registry" {
+  source = "../../modules/artifact-registry"
+
+  project_id      = var.project_id
+  repositories    = var.repositories
+  repository_name = var.repository_name
+  location        = var.region
+}
+
+module "service_account" {
+  source = "../../modules/service-account"
+
+  account_id   = var.account_id
+  display_name = var.display_name
+  iam_roles    = var.iam_roles
+  project_id   = var.project_id
+}
+
+module "workload_identity" {
+  source = "../../modules/workload-identity"
+
+  project_id            = var.project_id
+}
+

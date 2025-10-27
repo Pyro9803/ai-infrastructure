@@ -1,14 +1,15 @@
 resource "google_sql_database_instance" "cloud_sql_db" {
-  name             = var.instance_name
-  database_version = var.database_version
+  name             = var.db_instance_name
+  database_version = var.db_version
   region           = var.region
+  root_password    = var.db_root_password
 
   settings {
-    tier              = "db-custom-4-16384"
-    edition           = "ENTERPRISE"
-    availability_type = "ZONAL"
-    disk_type         = var.disk_type
-    disk_size         = var.disk_size
+    tier              = var.db_tier
+    edition           = var.db_edition
+    availability_type = var.db_availability_type
+    disk_type         = var.db_disk_type
+    disk_size         = var.db_disk_size
     activation_policy = "ALWAYS"
 
     backup_configuration {

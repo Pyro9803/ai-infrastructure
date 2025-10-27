@@ -49,64 +49,64 @@ resource "google_container_node_pool" "cpu_pool" {
 
 }
 
-resource "google_container_node_pool" "gpu_pool" {
-  count      = var.enable_gpu_pool ? 1 : 0
-  name       = "gpu-pool"
-  location   = var.location
-  cluster    = google_container_cluster.gke_cluster.name
-  node_count = 0
+# resource "google_container_node_pool" "gpu_pool" {
+#   count      = var.enable_gpu_pool ? 1 : 0
+#   name       = "gpu-pool"
+#   location   = var.location
+#   cluster    = google_container_cluster.gke_cluster.name
+#   node_count = 0
 
-  node_config {
-    machine_type = var.gpu_machine_type
-    disk_size_gb = var.gpu_disk_size_gb
-    disk_type    = var.gpu_disk_type
-    spot         = var.gpu_spot
+#   node_config {
+#     machine_type = var.gpu_machine_type
+#     disk_size_gb = var.gpu_disk_size_gb
+#     disk_type    = var.gpu_disk_type
+#     spot         = var.gpu_spot
 
-    service_account = google_service_account.gke_node_sa.email
+#     service_account = google_service_account.gke_node_sa.email
 
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
+#     oauth_scopes = [
+#       "https://www.googleapis.com/auth/cloud-platform"
+#     ]
 
-    guest_accelerator {
-      type  = var.gpu_accelerator_type
-      count = var.gpu_accelerator_count
-    }
+#     guest_accelerator {
+#       type  = var.gpu_accelerator_type
+#       count = var.gpu_accelerator_count
+#     }
 
-    labels = {
-      node-type = "gpu"
-      gpu-type  = var.gpu_accelerator_type
-    }
+#     labels = {
+#       node-type = "gpu"
+#       gpu-type  = var.gpu_accelerator_type
+#     }
 
-    taint {
-      key    = "nvidia.com/gpu-type"
-      value  = var.gpu_accelerator_type
-      effect = "NO_SCHEDULE"
-    }
+#     taint {
+#       key    = "nvidia.com/gpu-type"
+#       value  = var.gpu_accelerator_type
+#       effect = "NO_SCHEDULE"
+#     }
 
-    shielded_instance_config {
-      enable_secure_boot          = true
-      enable_integrity_monitoring = true
-    }
+#     shielded_instance_config {
+#       enable_secure_boot          = true
+#       enable_integrity_monitoring = true
+#     }
 
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-  }
+#     workload_metadata_config {
+#       mode = "GKE_METADATA"
+#     }
+#   }
 
-  autoscaling {
-    min_node_count = var.gpu_min_nodes
-    max_node_count = var.gpu_max_nodes
-  }
+#   autoscaling {
+#     min_node_count = var.gpu_min_nodes
+#     max_node_count = var.gpu_max_nodes
+#   }
 
-  # Upgrade settings
-  upgrade_settings {
-    max_surge       = 1
-    max_unavailable = 0
-  }
+#   # Upgrade settings
+#   upgrade_settings {
+#     max_surge       = 1
+#     max_unavailable = 0
+#   }
 
-  management {
-    auto_repair  = true
-    auto_upgrade = true
-  }
-}
+#   management {
+#     auto_repair  = true
+#     auto_upgrade = true
+#   }
+# }

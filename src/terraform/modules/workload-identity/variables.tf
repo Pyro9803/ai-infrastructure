@@ -1,3 +1,4 @@
 variable "project_id" {
-  description = ""
+  type        = string
+  description = "The GCP project ID where Workload Identity resources will be created"
 }

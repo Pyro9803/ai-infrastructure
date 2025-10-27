@@ -87,19 +87,19 @@ variable "gke_gpu_spot" {
   default     = false
 }
 
-variable "instance_name" {
+variable "db_instance_name" {
   description = "The name of the Cloud SQL instance"
   type        = string
   default     = "ai-infra-db"
 }
 
-variable "database_version" {
+variable "db_version" {
   description = "The database version for the Cloud SQL instance"
   type        = string
   default     = "POSTGRES_15"
 }
 
-variable "database_tier" {
+variable "db_tier" {
   description = "The machine type for the Cloud SQL instance"
   type        = string
   default     = "db-f1-micro"
@@ -115,4 +115,65 @@ variable "db_disk_type" {
   description = "The type of disk for the Cloud SQL instance"
   type        = string
   default     = "PD_SSD"
+}
+
+variable "artifact_repository_name" {
+  description = "The name of the Artifact Registry repository"
+  type        = string
+  default     = "ai-infra-artifact-repo"
+}
+
+variable "account_id" {
+  description = "The ID of the service account"
+  type        = string
+  default     = "ai-infra-service-account"
+}
+
+variable "display_name" {
+  description = "The display name of the service account"
+  type        = string
+  default     = "AI Infra Service Account"
+}
+
+variable "iam_roles" {
+  description = "The IAM roles to assign to the service account"
+  type        = list(string)
+  default = [
+    "roles/container.admin",
+    "roles/cloudsql.client",
+    "roles/artifactregistry.reader",
+  ]
+}
+
+variable "repositories" {
+  description = "List of Artifact Registry repositories to create"
+  type = list(object({
+    repository_id = string
+    description   = optional(string, "Artifact Registry repository")
+    format        = optional(string, "DOCKER")
+    labels        = optional(map(string), {})
+    iam_members   = optional(map(any), {})
+  }))
+
+  validation {
+    condition = alltrue([
+      for repo in var.repositories :
+      contains([
+        "DOCKER",
+        "MAVEN",
+        "NPM",
+        "PYTHON",
+        "APT",
+        "YUM",
+        "HELM"
+      ], repo.format)
+    ])
+    error_message = "All repository formats must be one of: DOCKER, MAVEN, NPM, PYTHON, APT, YUM, HELM."
+  }
+}
+
+variable "repository_name" {
+  description = "The name of the Artifact Registry repository"
+  type        = string
+  default     = "ai-infra-artifact-repo"
 }

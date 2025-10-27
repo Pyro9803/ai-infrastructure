@@ -1,3 +1,11 @@
+resource "google_project_service" "artifact_registry" {
+  project = var.project_id
+  service = "artifactregistry.googleapis.com"
+
+  disable_dependent_services = false
+  disable_on_destroy         = false
+}
+
 resource "google_project_service" "iam_credentials" {
   project = var.project_id
   service = "iamcredentials.googleapis.com"
