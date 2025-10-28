@@ -1,12 +1,65 @@
-project_id       = 
-instance_name    = 
-database_version = 
-database_tier    = 
-db_disk_size     = 
-db_disk_type     = 
-gke_cluster_name = 
-gke_node_pool_size = 
-gke_cpu_machine_type = 
-gke_enable_gpu_pool = 
-gke_gpu_machine_type = 
-gke_gpu_accelerator_type = 
+# GCP Project Configuration
+project_id = "your-gcp-project-id"
+region     = "asia-southeast1"
+
+# Network Configuration
+network_name    = "ai-infra-vpc"
+subnetwork_name = "ai-infra-subnet"
+subnetwork_cidr = "10.0.1.0/24"
+
+# GKE Cluster Configuration
+gke_cluster_name = "dev-gke-cluster"
+
+# CPU Node Pool
+gke_node_pool_size   = 1
+gke_cpu_machine_type = "e2-standard-4"
+
+# System Node Pool
+gke_system_node_count   = 1
+gke_system_machine_type = "e2-standard-2"
+gke_system_min_nodes    = 1
+gke_system_max_nodes    = 3
+
+# Application Node Pool
+gke_app_node_count   = 1
+gke_app_machine_type = "e2-standard-4"
+gke_app_min_nodes    = 1
+gke_app_max_nodes    = 5
+
+# GPU Node Pool (optional)
+gke_enable_gpu_pool       = false
+gke_gpu_machine_type      = "n1-standard-8"
+gke_gpu_accelerator_type  = "nvidia-tesla-t4"
+gke_gpu_accelerator_count = 1
+gke_gpu_disk_size_gb      = 100
+gke_gpu_disk_type         = "pd-ssd"
+gke_gpu_spot              = false
+
+# Cloud SQL Database
+db_instance_name = "ai-infra-db"
+db_version       = "POSTGRES_15"
+db_tier          = "db-f1-micro"
+db_disk_size     = 20
+db_disk_type     = "PD_SSD"
+
+# Artifact Registry
+repositories = [
+  {
+    repository_id = "dev-artifact-repo"
+    description   = "Development artifact repository"
+    format        = "DOCKER"
+    labels = {
+      environment = "dev"
+    }
+  }
+]
+repository_name = "dev-artifact-repo"
+
+# Service Account
+account_id   = "ai-infra-service-account"
+display_name = "AI Infra Service Account"
+iam_roles = [
+  "roles/container.admin",
+  "roles/cloudsql.client",
+  "roles/artifactregistry.reader",
+] 

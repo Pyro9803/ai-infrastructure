@@ -19,7 +19,7 @@ resource "google_project_iam_member" "gke_node_sa_roles" {
 resource "google_container_cluster" "gke_cluster" {
   name                     = var.cluster_name
   location                 = var.region
-  remove_default_node_pool = true
+  remove_default_node_pool = false
   initial_node_count       = 1
   network                  = var.network
   subnetwork               = var.subnetwork
@@ -30,6 +30,65 @@ resource "google_container_cluster" "gke_cluster" {
   }
 
   deletion_protection = false
+}
+
+resource "google_container_node_pool" "system_pool" {
+  name       = "system-pool"
+  location   = var.location
+  cluster    = google_container_cluster.gke_cluster.name
+  node_count = var.system_node_count
+
+  node_config {
+    machine_type = var.system_machine_type
+    disk_size_gb = 50
+    disk_type    = "pd-standard"
+    
+    service_account = google_service_account.gke_node_sa.email
+    
+    # OAuth scopes
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    # Node taints for system workloads
+    taint {
+      key    = "node-type"
+      value  = "system"
+      effect = "NO_SCHEDULE"
+    }
+
+    labels = {
+      node-type = "system"
+    }
+
+    # Shielded VM features
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    # Workload Identity
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+  }
+
+  # Auto-scaling
+  autoscaling {
+    min_node_count = var.system_min_nodes
+    max_node_count = var.system_max_nodes
+  }
+
+  # Upgrade settings
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
 }
 
 resource "google_container_node_pool" "cpu_pool" {
@@ -46,7 +105,58 @@ resource "google_container_node_pool" "cpu_pool" {
     service_account = google_service_account.gke_node_sa.email
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
   }
+}
 
+resource "google_container_node_pool" "application_pool" {
+  name       = "app-pool"
+  location   = var.location
+  cluster    = google_container_cluster.gke_cluster.name
+  node_count = var.app_node_count
+
+  node_config {
+    machine_type = var.app_machine_type
+    disk_size_gb = 100
+    disk_type    = "pd-standard"
+    
+    service_account = google_service_account.gke_node_sa.email
+    
+    # OAuth scopes
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    labels = {
+      node-type = "application"
+    }
+
+    # Shielded VM features
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    # Workload Identity
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+  }
+
+  # Auto-scaling
+  autoscaling {
+    min_node_count = var.app_min_nodes
+    max_node_count = var.app_max_nodes
+  }
+
+  # Upgrade settings
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
 }
 
 # resource "google_container_node_pool" "gpu_pool" {

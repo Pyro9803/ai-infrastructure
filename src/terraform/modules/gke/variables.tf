@@ -108,4 +108,53 @@ variable "project_id" {
   type        = string
 }
 
+# System node pool variables
+variable "system_node_count" {
+  description = "Initial number of nodes in the system pool"
+  type        = number
+  default     = 1
+}
+
+variable "system_machine_type" {
+  description = "Machine type for system pool nodes"
+  type        = string
+  default     = "e2-standard-2"
+}
+
+variable "system_min_nodes" {
+  description = "Minimum number of nodes in the system pool"
+  type        = number
+  default     = 1
+}
+
+variable "system_max_nodes" {
+  description = "Maximum number of nodes in the system pool"
+  type        = number
+  default     = 3
+}
+
+# Application node pool variables
+variable "app_node_count" {
+  description = "Initial number of nodes in the application pool"
+  type        = number
+  default     = 1
+}
+
+variable "app_machine_type" {
+  description = "Machine type for application pool nodes"
+  type        = string
+  default     = "e2-standard-4"
+}
+
+variable "app_min_nodes" {
+  description = "Minimum number of nodes in the application pool"
+  type        = number
+  default     = 1
+}
+
+variable "app_max_nodes" {
+  description = "Maximum number of nodes in the application pool"
+  type        = number
+  default     = 5
+}
 

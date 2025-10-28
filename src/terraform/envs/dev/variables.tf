@@ -87,6 +87,56 @@ variable "gke_gpu_spot" {
   default     = false
 }
 
+# System node pool variables
+variable "gke_system_node_count" {
+  description = "Initial number of nodes in the system pool"
+  type        = number
+  default     = 1
+}
+
+variable "gke_system_machine_type" {
+  description = "Machine type for system pool nodes"
+  type        = string
+  default     = "e2-standard-2"
+}
+
+variable "gke_system_min_nodes" {
+  description = "Minimum number of nodes in the system pool"
+  type        = number
+  default     = 1
+}
+
+variable "gke_system_max_nodes" {
+  description = "Maximum number of nodes in the system pool"
+  type        = number
+  default     = 3
+}
+
+# Application node pool variables
+variable "gke_app_node_count" {
+  description = "Initial number of nodes in the application pool"
+  type        = number
+  default     = 1
+}
+
+variable "gke_app_machine_type" {
+  description = "Machine type for application pool nodes"
+  type        = string
+  default     = "e2-standard-4"
+}
+
+variable "gke_app_min_nodes" {
+  description = "Minimum number of nodes in the application pool"
+  type        = number
+  default     = 1
+}
+
+variable "gke_app_max_nodes" {
+  description = "Maximum number of nodes in the application pool"
+  type        = number
+  default     = 5
+}
+
 variable "db_instance_name" {
   description = "The name of the Cloud SQL instance"
   type        = string
