@@ -97,12 +97,6 @@ variable "location" {
   type        = string
 }
 
-variable "cpu_machine_type" {
-  description = "The machine type for the CPU node pool"
-  type        = string
-  default     = "e2-standard-4"
-}
-
 variable "project_id" {
   description = "The GCP project ID"
   type        = string

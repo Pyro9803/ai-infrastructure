@@ -22,7 +22,6 @@ module "gke" {
   network          = module.network.network_name
   subnetwork       = module.network.subnetwork_name
   node_pool_size   = var.gke_node_pool_size
-  cpu_machine_type = var.gke_cpu_machine_type
 
   # System pool configuration
   system_node_count   = var.gke_system_node_count
