@@ -15,13 +15,12 @@ module "network" {
 module "gke" {
   source = "../../modules/gke"
 
-  project_id       = var.project_id
-  cluster_name     = var.gke_cluster_name
-  location         = var.region
-  region           = var.region
-  network          = module.network.network_name
-  subnetwork       = module.network.subnetwork_name
-  node_pool_size   = var.gke_node_pool_size
+  project_id   = var.project_id
+  cluster_name = var.gke_cluster_name
+  location     = var.region
+  region       = var.region
+  network      = module.network.network_name
+  subnetwork   = module.network.subnetwork_name
 
   # System pool configuration
   system_node_count   = var.gke_system_node_count
@@ -37,6 +36,7 @@ module "gke" {
 
   # GPU pool configuration (commented out)
   enable_gpu_pool       = var.gke_enable_gpu_pool
+  gpu_node_count        = var.gke_gpu_node_count
   gpu_machine_type      = var.gke_gpu_machine_type
   gpu_accelerator_type  = var.gke_gpu_accelerator_type
   gpu_accelerator_count = var.gke_gpu_accelerator_count
@@ -48,20 +48,21 @@ module "gke" {
 module "cloud_sql_db" {
   source = "../../modules/database"
 
-  region       = var.region
-  db_version   = var.db_version
-  db_tier      = var.db_tier
-  db_disk_size = var.db_disk_size
-  db_disk_type = var.db_disk_type
+  db_instance_name = var.db_instance_name
+  region           = var.region
+  db_version       = var.db_version
+  db_tier          = var.db_tier
+  db_disk_size     = var.db_disk_size
+  db_disk_type     = var.db_disk_type
+  db_root_password = var.db_root_password
 }
 
 module "artifact_registry" {
   source = "../../modules/artifact-registry"
 
-  project_id      = var.project_id
-  repositories    = var.repositories
-  repository_name = var.repository_name
-  location        = var.region
+  project_id   = var.project_id
+  repositories = var.repositories
+  location     = var.region
 }
 
 module "service_account" {
@@ -76,6 +77,6 @@ module "service_account" {
 module "workload_identity" {
   source = "../../modules/workload-identity"
 
-  project_id = var.project_id
+  project_id  = var.project_id
+  enable_apis = var.enable_apis
 }
-

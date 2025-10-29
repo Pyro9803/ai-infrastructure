@@ -1,11 +1,11 @@
 variable "account_id" {
   description = "Account ID of the service account to be created"
-  type = string
+  type        = string
 }
 
 variable "display_name" {
   description = "Display name of the service account"
-  type = string
+  type        = string
 }
 
 variable "iam_roles" {

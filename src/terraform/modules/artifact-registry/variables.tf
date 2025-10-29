@@ -3,7 +3,6 @@ variable "project_id" {
   type        = string
 }
 
-
 variable "repositories" {
   description = "List of Artifact Registry repositories to create"
   type = list(object({
@@ -31,31 +30,7 @@ variable "repositories" {
   }
 }
 
-variable "repository_name" {
-  type = string
-  description = "The name of the artifact registry repository."
-}
-
 variable "location" {
-  type = string
+  type        = string
   description = "The location (region) of the artifact registry repository."
 }
-
-variable "format" {
-  type        = string
-  description = "The format of the artifact registry repository."
-  default     = "DOCKER"
-}
-
-variable "description" {
-  type        = string
-  description = "The description of the artifact registry repository."
-  default     = "Artifact Registry repository"
-}
-
-variable "labels" {
-  type        = map(string)
-  description = "Labels to apply to the artifact registry repository."
-  default     = {}
-}
-

@@ -10,24 +10,6 @@ variable "region" {
   default     = "asia-southeast1"
 }
 
-variable "node_pool_name" {
-  description = "The name of the primary node pool"
-  type        = string
-  default     = "primary-preemptible-nodes"
-}
-
-variable "node_pool_size" {
-  description = "The size of the primary node pool"
-  type        = number
-  default     = 1
-}
-
-variable "machine_type" {
-  description = "The machine type for the nodes in the primary node pool"
-  type        = string
-  default     = "e2-medium"
-}
-
 variable "network" {
   description = "The VPC network to deploy the GKE cluster in"
   type        = string
@@ -152,8 +134,7 @@ variable "app_max_nodes" {
   default     = 5
 }
 
-variable "node_locations" {
-  type = list(string)
-  description = "The list of zones for the GKE cluster nodes"
-  default = ["asia-southeast1-a", "asia-southeast1-b"]
+variable "gpu_node_count" {
+  type    = number
+  default = 1
 }

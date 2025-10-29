@@ -7,6 +7,11 @@ variable "region" {
   description = "The GCP region"
   type        = string
   default     = "asia-southeast1"
+
+  validation {
+    condition     = can(regex("^[a-z]+-[a-z]+[0-9]$", var.region))
+    error_message = "Region must be a valid GCP region format (e.g., 'asia-southeast1')."
+  }
 }
 
 variable "network_name" {
@@ -25,24 +30,17 @@ variable "subnetwork_cidr" {
   description = "The CIDR block for the subnetwork"
   type        = string
   default     = "10.0.1.0/24"
+
+  validation {
+    condition     = can(cidrhost(var.subnetwork_cidr, 0))
+    error_message = "Subnetwork CIDR must be a valid IPv4 CIDR block."
+  }
 }
 
 variable "gke_cluster_name" {
   description = "The name of the GKE cluster"
   type        = string
   default     = "ai-infra-gke-cluster"
-}
-
-variable "gke_node_pool_size" {
-  description = "The number of nodes in the GKE node pool"
-  type        = number
-  default     = 3
-}
-
-variable "gke_cpu_machine_type" {
-  description = "The machine type for CPU nodes in the GKE cluster"
-  type        = string
-  default     = "e2-standard-4"
 }
 
 variable "gke_enable_gpu_pool" {
@@ -87,6 +85,12 @@ variable "gke_gpu_spot" {
   default     = false
 }
 
+variable "gke_gpu_node_count" {
+  description = "Initial number of nodes in the GPU pool"
+  type        = number
+  default     = 0
+}
+
 # System node pool variables
 variable "gke_system_node_count" {
   description = "Initial number of nodes in the system pool"
@@ -98,6 +102,11 @@ variable "gke_system_machine_type" {
   description = "Machine type for system pool nodes"
   type        = string
   default     = "e2-standard-2"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9]*-(medium|small|micro|[a-z0-9]+-[0-9]+)$", var.gke_system_machine_type))
+    error_message = "Machine type must be a valid GCP machine type format (e.g., 'e2-standard-2', 'e2-medium', 'n1-standard-4')."
+  }
 }
 
 variable "gke_system_min_nodes" {
@@ -123,6 +132,11 @@ variable "gke_app_machine_type" {
   description = "Machine type for application pool nodes"
   type        = string
   default     = "e2-standard-4"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9]*-(medium|small|micro|[a-z0-9]+-[0-9]+)$", var.gke_app_machine_type))
+    error_message = "Machine type must be a valid GCP machine type format (e.g., 'e2-standard-4', 'e2-medium', 'n1-standard-8')."
+  }
 }
 
 variable "gke_app_min_nodes" {
@@ -159,6 +173,11 @@ variable "db_disk_size" {
   description = "The size of the disk for the Cloud SQL instance in GB"
   type        = number
   default     = 20
+
+  validation {
+    condition     = var.db_disk_size >= 10 && var.db_disk_size <= 65536
+    error_message = "Database disk size must be between 10 GB and 65536 GB."
+  }
 }
 
 variable "db_disk_type" {
@@ -167,10 +186,10 @@ variable "db_disk_type" {
   default     = "PD_SSD"
 }
 
-variable "artifact_repository_name" {
-  description = "The name of the Artifact Registry repository"
+variable "db_root_password" {
+  description = "The root password for the Cloud SQL instance"
   type        = string
-  default     = "ai-infra-artifact-repo"
+  sensitive   = true
 }
 
 variable "account_id" {
@@ -222,8 +241,15 @@ variable "repositories" {
   }
 }
 
-variable "repository_name" {
-  description = "The name of the Artifact Registry repository"
-  type        = string
-  default     = "ai-infra-artifact-repo"
+variable "enable_apis" {
+  description = "List of GCP APIs to enable for the project"
+  type        = list(string)
+  default = [
+    "artifactregistry.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "sts.googleapis.com",
+    "sqladmin.googleapis.com",
+    "container.googleapis.com",
+    "compute.googleapis.com"
+  ]
 }

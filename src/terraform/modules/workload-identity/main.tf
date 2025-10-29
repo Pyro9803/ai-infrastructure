@@ -1,31 +1,14 @@
-resource "google_project_service" "artifact_registry" {
+resource "google_project_service" "enabled_apis" {
+  for_each = toset(var.enable_apis)
+
   project = var.project_id
-  service = "artifactregistry.googleapis.com"
+  service = each.value
 
-  disable_dependent_services = false
-  disable_on_destroy         = false
-}
+  disable_dependent_services = var.disable_dependent_services
+  disable_on_destroy         = var.disable_on_destroy
 
-resource "google_project_service" "iam_credentials" {
-  project = var.project_id
-  service = "iamcredentials.googleapis.com"
-
-  disable_dependent_services = false
-  disable_on_destroy         = false
-}
-
-resource "google_project_service" "sts" {
-  project = var.project_id
-  service = "sts.googleapis.com"
-
-  disable_dependent_services = false
-  disable_on_destroy         = false
-}
-
-resource "google_project_service" "sqladmin" {
-  project = var.project_id
-  service = "sqladmin.googleapis.com"
-
-  disable_dependent_services = false
-  disable_on_destroy         = false
+  timeouts {
+    create = "30m"
+    update = "40m"
+  }
 }

@@ -50,7 +50,6 @@ variable "db_root_password" {
   description = "The root password for the Cloud SQL instance"
   type        = string
   sensitive   = true
-  default     = "ChangeMe123!"
 }
 
 variable "authorized_networks" {
@@ -60,4 +59,10 @@ variable "authorized_networks" {
     value = string
   }))
   default = []
+}
+
+variable "enable_public_ip" {
+  description = "Whether to enable public IP for the Cloud SQL instance"
+  type        = bool
+  default     = false
 }

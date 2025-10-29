@@ -10,10 +10,6 @@ subnetwork_cidr = "10.0.1.0/24"
 # GKE Cluster Configuration
 gke_cluster_name = "dev-gke-cluster"
 
-# CPU Node Pool
-gke_node_pool_size   = 1
-gke_cpu_machine_type = "e2-standard-4"
-
 # System Node Pool
 gke_system_node_count   = 1
 gke_system_machine_type = "e2-standard-2"
@@ -41,6 +37,7 @@ db_version       = "POSTGRES_15"
 db_tier          = "db-f1-micro"
 db_disk_size     = 20
 db_disk_type     = "PD_SSD"
+db_root_password = "YOUR_SECURE_PASSWORD_HERE"  # REQUIRED: Set a secure password
 
 # Artifact Registry
 repositories = [
@@ -53,7 +50,6 @@ repositories = [
     }
   }
 ]
-repository_name = "dev-artifact-repo"
 
 # Service Account
 account_id   = "ai-infra-service-account"
@@ -62,4 +58,14 @@ iam_roles = [
   "roles/container.admin",
   "roles/cloudsql.client",
   "roles/artifactregistry.reader",
-] 
+]
+
+# GCP APIs to Enable (optional - defaults provided)
+# enable_apis = [
+#   "artifactregistry.googleapis.com",
+#   "iamcredentials.googleapis.com",
+#   "sts.googleapis.com",
+#   "sqladmin.googleapis.com",
+#   "container.googleapis.com",
+#   "compute.googleapis.com"
+# ] 
