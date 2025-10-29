@@ -21,7 +21,7 @@ resource "google_container_cluster" "gke_cluster" {
   location                 = var.region
   remove_default_node_pool = false
   initial_node_count       = 1
-  node_locations           = ["asia-southeast1-a", "asia-southeast1-b"]
+  node_locations           = var.node_locations
   network                  = var.network
   subnetwork               = var.subnetwork
 

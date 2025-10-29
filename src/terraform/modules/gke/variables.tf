@@ -152,3 +152,8 @@ variable "app_max_nodes" {
   default     = 5
 }
 
+variable "node_locations" {
+  type = list(string)
+  description = "The list of zones for the GKE cluster nodes"
+  default = ["asia-southeast1-a", "asia-southeast1-b"]
+}
