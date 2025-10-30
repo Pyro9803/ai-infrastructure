@@ -3,6 +3,13 @@ provider "google" {
   region  = var.region
 }
 
+module "workload_identity" {
+  source = "../../modules/workload-identity"
+
+  project_id  = var.project_id
+  enable_apis = var.enable_apis
+}
+
 module "network" {
   source = "../../modules/network"
 
@@ -10,6 +17,8 @@ module "network" {
   region          = var.region
   subnetwork_name = var.subnetwork_name
   subnetwork_cidr = var.subnetwork_cidr
+
+  depends_on = [module.workload_identity]
 }
 
 module "gke" {
@@ -84,11 +93,4 @@ module "service_account" {
   display_name = var.display_name
   iam_roles    = var.iam_roles
   project_id   = var.project_id
-}
-
-module "workload_identity" {
-  source = "../../modules/workload-identity"
-
-  project_id  = var.project_id
-  enable_apis = var.enable_apis
 }

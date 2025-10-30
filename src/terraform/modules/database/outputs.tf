@@ -10,5 +10,5 @@ output "instance_connection_name" {
 
 output "instance_ip_address" {
   description = "The IP address of the Cloud SQL instance"
-  value       = google_sql_database_instance.cloud_sql_db.ip_address.0.ip_address
+  value       = length(google_sql_database_instance.cloud_sql_db.ip_address) > 0 ? google_sql_database_instance.cloud_sql_db.ip_address[0].ip_address : null
 }
