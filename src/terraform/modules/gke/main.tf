@@ -18,7 +18,8 @@ resource "google_project_iam_member" "gke_node_sa_roles" {
 
 resource "google_container_cluster" "gke_cluster" {
   name                     = var.cluster_name
-  location                 = var.region
+  location                 = var.use_zonal_cluster ? var.zone : var.region
+  node_locations           = var.node_locations
   remove_default_node_pool = true
   initial_node_count       = 1
   network                  = var.network
@@ -40,7 +41,7 @@ resource "google_container_cluster" "gke_cluster" {
 
 resource "google_container_node_pool" "system_pool" {
   name       = "${var.cluster_name}-system-pool"
-  location   = var.location
+  location   = var.use_zonal_cluster ? var.zone : var.region
   cluster    = google_container_cluster.gke_cluster.name
   node_count = var.system_node_count
 
@@ -99,7 +100,7 @@ resource "google_container_node_pool" "system_pool" {
 
 resource "google_container_node_pool" "application_pool" {
   name       = "${var.cluster_name}-app-pool"
-  location   = var.location
+  location   = var.use_zonal_cluster ? var.zone : var.region
   cluster    = google_container_cluster.gke_cluster.name
   node_count = var.app_node_count
 
@@ -152,7 +153,7 @@ resource "google_container_node_pool" "application_pool" {
 resource "google_container_node_pool" "gpu_pool" {
   count      = var.enable_gpu_pool ? 1 : 0
   name       = "gpu-pool"
-  location   = var.location
+  location   = var.use_zonal_cluster ? var.zone : var.region
   cluster    = google_container_cluster.gke_cluster.name
   node_count = var.gpu_node_count
 

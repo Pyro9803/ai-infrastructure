@@ -17,10 +17,15 @@ module "gke" {
 
   project_id   = var.project_id
   cluster_name = var.gke_cluster_name
-  location     = var.region
+  location     = var.gke_use_zonal_cluster ? var.gke_zone : var.region
   region       = var.region
   network      = module.network.network_name
   subnetwork   = module.network.subnetwork_name
+
+  # Zonal cluster configuration
+  use_zonal_cluster = var.gke_use_zonal_cluster
+  zone              = var.gke_zone
+  node_locations    = var.gke_node_locations
 
   # System pool configuration
   system_node_count   = var.gke_system_node_count
@@ -40,6 +45,8 @@ module "gke" {
   gpu_machine_type      = var.gke_gpu_machine_type
   gpu_accelerator_type  = var.gke_gpu_accelerator_type
   gpu_accelerator_count = var.gke_gpu_accelerator_count
+  gpu_max_nodes         = var.gke_gpu_max_nodes
+  gpu_min_nodes         = var.gke_gpu_min_nodes
   gpu_disk_size_gb      = var.gke_gpu_disk_size_gb
   gpu_disk_type         = var.gke_gpu_disk_type
   gpu_spot              = var.gke_gpu_spot
@@ -48,13 +55,17 @@ module "gke" {
 module "cloud_sql_db" {
   source = "../../modules/database"
 
-  db_instance_name = var.db_instance_name
-  region           = var.region
-  db_version       = var.db_version
-  db_tier          = var.db_tier
-  db_disk_size     = var.db_disk_size
-  db_disk_type     = var.db_disk_type
-  db_root_password = var.db_root_password
+  db_instance_name     = var.db_instance_name
+  region               = var.region
+  db_version           = var.db_version
+  db_tier              = var.db_tier
+  db_disk_size         = var.db_disk_size
+  db_disk_type         = var.db_disk_type
+  db_root_password     = var.db_root_password
+  db_edition           = var.db_edition
+  db_availability_type = var.db_availability_type
+  enable_public_ip     = var.enable_public_ip
+  authorized_networks  = var.authorized_networks
 }
 
 module "artifact_registry" {

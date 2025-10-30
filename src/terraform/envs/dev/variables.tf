@@ -43,6 +43,24 @@ variable "gke_cluster_name" {
   default     = "ai-infra-gke-cluster"
 }
 
+variable "gke_use_zonal_cluster" {
+  description = "Whether to create a zonal cluster (true) or regional cluster (false)"
+  type        = bool
+  default     = false
+}
+
+variable "gke_zone" {
+  description = "The zone for zonal GKE cluster deployment"
+  type        = string
+  default     = "asia-southeast1-a"
+}
+
+variable "gke_node_locations" {
+  description = "Additional zones for GKE node pools (for multi-zonal deployment)"
+  type        = list(string)
+  default     = []
+}
+
 variable "gke_enable_gpu_pool" {
   description = "Whether to enable a GPU node pool in the GKE cluster"
   type        = bool
@@ -89,6 +107,18 @@ variable "gke_gpu_node_count" {
   description = "Initial number of nodes in the GPU pool"
   type        = number
   default     = 0
+}
+
+variable "gke_gpu_min_nodes" {
+  description = "Minimum number of nodes in the GPU pool for autoscaling"
+  type        = number
+  default     = 0
+}
+
+variable "gke_gpu_max_nodes" {
+  description = "Maximum number of nodes in the GPU pool for autoscaling"
+  type        = number
+  default     = 3
 }
 
 # System node pool variables
@@ -190,6 +220,33 @@ variable "db_root_password" {
   description = "The root password for the Cloud SQL instance"
   type        = string
   sensitive   = true
+}
+
+variable "db_edition" {
+  description = "The edition for the Cloud SQL instance"
+  type        = string
+  default     = "ENTERPRISE"
+}
+
+variable "db_availability_type" {
+  description = "The availability type for the Cloud SQL instance"
+  type        = string
+  default     = "ZONAL"
+}
+
+variable "enable_public_ip" {
+  description = "Whether to enable public IP for the Cloud SQL instance"
+  type        = bool
+  default     = true
+}
+
+variable "authorized_networks" {
+  description = "The authorized networks for the Cloud SQL instance"
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  default = []
 }
 
 variable "account_id" {

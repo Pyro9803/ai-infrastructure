@@ -79,6 +79,24 @@ variable "location" {
   type        = string
 }
 
+variable "use_zonal_cluster" {
+  description = "Whether to create a zonal cluster (true) or regional cluster (false)"
+  type        = bool
+  default     = false
+}
+
+variable "zone" {
+  description = "The zone for zonal cluster deployment (only used if use_zonal_cluster is true)"
+  type        = string
+  default     = ""
+}
+
+variable "node_locations" {
+  description = "Additional zones for node pools (for multi-zonal node pools)"
+  type        = list(string)
+  default     = []
+}
+
 variable "project_id" {
   description = "The GCP project ID"
   type        = string
