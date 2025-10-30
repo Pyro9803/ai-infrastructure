@@ -47,7 +47,7 @@ variable "gpu_accelerator_count" {
 variable "gpu_disk_size_gb" {
   description = "The disk size in GB for nodes in the GPU node pool"
   type        = number
-  default     = 200
+  default     = 50
 }
 
 variable "gpu_disk_type" {

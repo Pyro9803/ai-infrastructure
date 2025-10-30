@@ -66,3 +66,9 @@ variable "enable_public_ip" {
   type        = bool
   default     = false
 }
+
+variable "private_network" {
+  description = "The VPC network self-link for private IP configuration"
+  type        = string
+  default     = null
+}

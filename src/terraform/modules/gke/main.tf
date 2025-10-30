@@ -106,7 +106,7 @@ resource "google_container_node_pool" "application_pool" {
 
   node_config {
     machine_type = var.app_machine_type
-    disk_size_gb = 100
+    disk_size_gb = 50
     disk_type    = "pd-standard"
 
     service_account = google_service_account.gke_node_sa.email
@@ -151,11 +151,12 @@ resource "google_container_node_pool" "application_pool" {
 }
 
 resource "google_container_node_pool" "gpu_pool" {
-  count      = var.enable_gpu_pool ? 1 : 0
-  name       = "gpu-pool"
-  location   = var.use_zonal_cluster ? var.zone : var.region
-  cluster    = google_container_cluster.gke_cluster.name
-  node_count = var.gpu_node_count
+  count          = var.enable_gpu_pool ? 1 : 0
+  name           = "${var.cluster_name}-gpu-pool"
+  location       = var.location
+  node_locations = var.node_locations
+  cluster        = google_container_cluster.gke_cluster.name
+  node_count     = var.gpu_node_count
 
   node_config {
     machine_type = var.gpu_machine_type

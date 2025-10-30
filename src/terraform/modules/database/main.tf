@@ -25,7 +25,8 @@ resource "google_sql_database_instance" "cloud_sql_db" {
     }
 
     ip_configuration {
-      ipv4_enabled = var.enable_public_ip
+      ipv4_enabled    = var.enable_public_ip
+      private_network = var.private_network
 
       dynamic "authorized_networks" {
         for_each = var.authorized_networks

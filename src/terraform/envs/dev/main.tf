@@ -66,6 +66,7 @@ module "cloud_sql_db" {
   db_availability_type = var.db_availability_type
   enable_public_ip     = var.enable_public_ip
   authorized_networks  = var.authorized_networks
+  private_network      = module.network.vpc_self_link
 }
 
 module "artifact_registry" {
