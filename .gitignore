@@ -1,1 +1,15 @@
 src/terraform/envs/*/.terraform/*
+src/terraform/envs/*/.terraform.lock.hcl
+src/terraform/envs/*/*.tfvars
+src/terraform/envs/*/*.tfstate
+src/terraform/envs/*/*.tfstate.backup
+
+**/tfplan
+**/.terraform
+**/.terraform.lock.hcl
+**/*.tfvars
+**/*.tfstate
+**/*.tfstate.backup
+**/terraform.tfstate.*
+**/.terraform.tfstate.*
+private/*

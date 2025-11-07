@@ -1,0 +1,19 @@
+---
+# Ansible Galaxy Requirements
+# Install with: ansible-galaxy install -r requirements.yml
+
+collections:
+  # Kubernetes collection for k8s module
+  - name: kubernetes.core
+    version: ">=2.4.0"
+  
+  # Google Cloud collection
+  - name: google.cloud
+    version: ">=1.0.0"
+  
+  # Community general utilities
+  - name: community.general
+    version: ">=5.0.0"
+
+# No external roles needed for this project
+roles: []

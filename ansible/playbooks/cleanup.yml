@@ -1,0 +1,51 @@
+---
+# Cleanup playbook for TinyLlama deployment
+#
+# Usage:
+#   ansible-playbook -i inventory/dev playbooks/cleanup.yml
+#   ansible-playbook -i inventory/prod playbooks/cleanup.yml
+
+- name: Cleanup TinyLlama Deployment
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+    - name: Delete RayService
+      ansible.builtin.command: kubectl delete rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }}
+      register: rayservice_deleted
+      failed_when: false
+      changed_when: rayservice_deleted.rc == 0
+    
+    - name: Delete ConfigMap
+      ansible.builtin.command: kubectl delete configmap -n {{ kubernetes.namespace }} {{ kubernetes.config_map_name }}
+      register: configmap_deleted
+      failed_when: false
+      changed_when: configmap_deleted.rc == 0
+    
+    - name: Wait for resources to be deleted
+      ansible.builtin.pause:
+        seconds: 30
+      when: rayservice_deleted.changed or configmap_deleted.changed
+    
+    - name: Verify deletion
+      ansible.builtin.command: kubectl get rayservice,configmap -n {{ kubernetes.namespace }}
+      register: verify_deletion
+      failed_when: false
+      changed_when: false
+    
+    - name: Check if resources still exist
+      ansible.builtin.shell: echo "{{ verify_deletion.stdout }}" | grep -i tinyllama || echo "All cleaned up"
+      register: cleanup_check
+      changed_when: false
+    
+    - name: Cleanup summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "Cleanup Summary"
+          - "=========================================="
+          - "Environment: {{ deploy_environment }}"
+          - "RayService deleted: {{ rayservice_deleted.changed }}"
+          - "ConfigMap deleted: {{ configmap_deleted.changed }}"
+          - "Status: {{ 'Resources removed' if (rayservice_deleted.changed or configmap_deleted.changed) else 'Nothing to clean' }}"
+          - "=========================================="

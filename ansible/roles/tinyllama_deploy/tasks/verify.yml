@@ -1,0 +1,61 @@
+---
+# Verification tasks
+
+- name: Get head pod name
+  ansible.builtin.shell: |
+    kubectl get pods -n {{ kubernetes.namespace }} \
+    -l ray.io/cluster={{ ray_cluster_name }},ray.io/node-type=head \
+    -o jsonpath='{.items[0].metadata.name}'
+  register: head_pod_name_output
+  changed_when: false
+
+- name: Set head pod name fact
+  ansible.builtin.set_fact:
+    head_pod_name: "{{ head_pod_name_output.stdout }}"
+
+- name: Check Ray cluster status
+  ansible.builtin.command: kubectl exec -n {{ kubernetes.namespace }} {{ head_pod_name }} -c ray-head -- ray status
+  register: ray_status
+  changed_when: false
+
+- name: Display Ray cluster status
+  ansible.builtin.debug:
+    var: ray_status.stdout_lines
+
+- name: Wait for Serve application to be ready
+  ansible.builtin.shell: |
+    kubectl exec -n {{ kubernetes.namespace }} {{ head_pod_name }} -c ray-head -- serve status | grep -q "RUNNING"
+  register: serve_ready
+  until: serve_ready.rc == 0
+  retries: 60
+  delay: 10
+  changed_when: false
+  failed_when: false
+
+- name: Check Ray Serve status
+  ansible.builtin.command: kubectl exec -n {{ kubernetes.namespace }} {{ head_pod_name }} -c ray-head -- serve status
+  register: serve_status
+  changed_when: false
+
+- name: Display Ray Serve status
+  ansible.builtin.debug:
+    var: serve_status.stdout_lines
+
+- name: Get RayService status
+  ansible.builtin.command: kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }} -o yaml
+  register: rayservice_status
+  changed_when: false
+
+- name: Check if deployment is healthy
+  ansible.builtin.shell: |
+    kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }} \
+    -o jsonpath='{.status.activeServiceStatus.applicationStatus.status}'
+  register: app_status
+  changed_when: false
+
+- name: Verify application is running
+  ansible.builtin.assert:
+    that:
+      - "'RUNNING' in app_status.stdout or 'DEPLOYING' in app_status.stdout"
+    fail_msg: "Application is not running. Status: {{ app_status.stdout }}"
+    success_msg: "Application status: {{ app_status.stdout }}"

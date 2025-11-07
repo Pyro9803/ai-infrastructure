@@ -1,0 +1,14 @@
+---
+# Verification-only playbook
+# Use this to verify an existing deployment without making changes
+#
+# Usage:
+#   ansible-playbook -i inventory/prod playbooks/verify.yml
+
+- name: Verify TinyLlama Deployment
+  hosts: all
+  gather_facts: false
+  
+  roles:
+    - role: tinyllama_deploy
+      tags: [verify]

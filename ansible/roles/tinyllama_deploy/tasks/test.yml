@@ -1,0 +1,39 @@
+---
+# Testing tasks
+
+- name: Get service name
+  ansible.builtin.shell: |
+    kubectl get svc -n {{ kubernetes.namespace }} \
+    -l ray.io/cluster={{ ray_cluster_name }},ray.io/serve=true \
+    -o jsonpath='{.items[0].metadata.name}'
+  register: service_name_output
+  changed_when: false
+
+- name: Set service name fact
+  ansible.builtin.set_fact:
+    service_name: "{{ service_name_output.stdout }}"
+
+- name: Display service information
+  ansible.builtin.debug:
+    msg: "Service: {{ service_name }}"
+
+- name: Test model endpoint (from within cluster)
+  ansible.builtin.shell: |
+    kubectl exec -n {{ kubernetes.namespace }} {{ head_pod_name }} -c ray-head -- \
+    curl -X POST http://localhost:8000/ \
+    -H "Content-Type: application/json" \
+    -d '{
+      "messages": [{"role": "user", "content": "{{ model.test_prompt }}"}],
+      "max_tokens": {{ model.test_max_tokens }}
+    }'
+  register: model_test
+  changed_when: false
+  failed_when: false
+  when: testing.test_endpoint | bool
+
+- name: Display test result
+  ansible.builtin.debug:
+    msg: "{{ model_test.stdout | from_json }}"
+  when:
+    - testing.test_endpoint | bool
+    - model_test.rc == 0

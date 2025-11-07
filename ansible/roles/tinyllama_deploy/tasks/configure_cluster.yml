@@ -1,0 +1,19 @@
+---
+# Cluster configuration tasks
+
+- name: Get GKE cluster credentials
+  ansible.builtin.command:
+    cmd: >
+      gcloud container clusters get-credentials {{ gke_cluster_name }}
+      --region {{ gke_cluster_region }}
+      --project {{ gcp_project_id }}
+  changed_when: true
+
+- name: Verify cluster connectivity
+  ansible.builtin.command: kubectl cluster-info
+  register: cluster_info
+  changed_when: false
+
+- name: Display cluster info
+  ansible.builtin.debug:
+    var: cluster_info.stdout_lines

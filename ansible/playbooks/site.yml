@@ -1,0 +1,16 @@
+---
+# Main site playbook for TinyLlama deployment
+# This is the entry point for all deployments
+#
+# Usage:
+#   ansible-playbook -i inventory/dev playbooks/site.yml
+#   ansible-playbook -i inventory/prod playbooks/site.yml
+#   ansible-playbook -i inventory/staging playbooks/site.yml
+
+- name: Deploy TinyLlama Model to GKE
+  hosts: all
+  gather_facts: true
+  
+  roles:
+    - role: tinyllama_deploy
+      tags: [deploy]

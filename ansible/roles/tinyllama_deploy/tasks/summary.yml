@@ -1,0 +1,29 @@
+---
+# Summary display tasks
+
+- name: Display deployment summary
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "TinyLlama Deployment Summary"
+      - "=========================================="
+      - "Environment: {{ deploy_environment }}"
+      - "Namespace: {{ kubernetes.namespace }}"
+      - "RayService: {{ kubernetes.deployment_name }}"
+      - "Ray Cluster: {{ ray_cluster_name | default('N/A') }}"
+      - "Head Pod: {{ head_pod_name | default('N/A') }}"
+      - "Service: {{ service_name | default('N/A') }}"
+      - "=========================================="
+      - ""
+      - "Next steps:"
+      - "1. Port forward to access the service:"
+      - "   kubectl port-forward -n {{ kubernetes.namespace }} svc/{{ service_name | default('tinyllama-service-serve-svc') }} 8000:8000"
+      - ""
+      - "2. Test the model:"
+      - "   curl -X POST http://localhost:8000/ \\"
+      - "     -H 'Content-Type: application/json' \\"
+      - "     -d '{\"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}], \"max_tokens\": 100}'"
+      - ""
+      - "3. View logs:"
+      - "   kubectl logs -n {{ kubernetes.namespace }} -l ray.io/node-type=head -f"
+      - "=========================================="

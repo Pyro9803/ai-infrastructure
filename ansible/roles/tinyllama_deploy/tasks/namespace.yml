@@ -1,0 +1,18 @@
+---
+# Namespace management tasks
+
+- name: Check if namespace exists
+  ansible.builtin.command: kubectl get namespace {{ kubernetes.namespace }}
+  register: namespace_check
+  changed_when: false
+  failed_when: false
+
+- name: Create namespace if not exists
+  ansible.builtin.command: kubectl create namespace {{ kubernetes.namespace }}
+  when: namespace_check.rc != 0
+  register: namespace_created
+  notify: namespace_created
+
+- name: Namespace status
+  ansible.builtin.debug:
+    msg: "{{ 'Namespace created' if namespace_created.changed else 'Namespace already exists' }}"

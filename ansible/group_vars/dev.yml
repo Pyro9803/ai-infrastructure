@@ -1,0 +1,27 @@
+---
+# Development environment variables
+
+deploy_environment: dev
+
+# Terraform configuration
+terraform_env: dev
+terraform_dir: "{{ playbook_dir }}/../terraform/envs/{{ terraform_env }}"
+
+# Less strict timeouts for dev
+timeouts:
+  pod_ready: 300
+  deployment_ready: 600
+
+# Testing enabled in dev
+testing:
+  enabled: true
+  test_endpoint: true
+  run_health_checks: true
+
+# Monitoring disabled in dev to save resources
+monitoring:
+  enabled: false
+
+# Smaller resources for dev
+model:
+  replica_count: 1
