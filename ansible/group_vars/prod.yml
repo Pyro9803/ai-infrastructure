@@ -1,0 +1,28 @@
+---
+# Production environment variables
+
+deploy_environment: prod
+
+# Terraform configuration
+terraform_env: prod
+terraform_dir: "{{ playbook_dir }}/../terraform/envs/{{ terraform_env }}"
+
+# Stricter timeouts for prod
+timeouts:
+  pod_ready: 600
+  deployment_ready: 900
+
+# Testing can be disabled in prod (already validated in dev/staging)
+testing:
+  enabled: false
+  test_endpoint: false
+  run_health_checks: true
+
+# Monitoring enabled in production
+monitoring:
+  enabled: true
+  log_level: INFO
+
+# Production resources (can scale based on needs)
+model:
+  replica_count: 1  # Increase for HA

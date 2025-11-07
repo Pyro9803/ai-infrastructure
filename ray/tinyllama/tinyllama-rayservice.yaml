@@ -1,0 +1,114 @@
+apiVersion: ray.io/v1
+kind: RayService
+metadata:
+  name: tinyllama-service
+  namespace: ai
+spec:
+  serviceUnhealthySecondThreshold: 900
+  deploymentUnhealthySecondThreshold: 300
+  serveConfigV2: |
+    proxy_location: EveryNode
+    
+    applications:
+    - name: tinyllama-app
+      import_path: vllm_app:deployment
+      runtime_env:
+        env_vars:
+          VLLM_WORKER_MULTIPROC_METHOD: "spawn"
+    
+  rayClusterConfig:
+    rayVersion: '2.49.1'
+    enableInTreeAutoscaling: false
+    headGroupSpec:
+      serviceType: ClusterIP
+      rayStartParams:
+        dashboard-host: '0.0.0.0'
+        dashboard-port: '8265'
+        num-gpus: '0'
+      template:
+        spec:
+          containers:
+          - name: ray-head
+            image: rayproject/ray-llm:2.49.1-py311-cu128
+            resources:
+              limits:
+                cpu: 1
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 2Gi
+            ports:
+            - containerPort: 6379
+              name: gcs-server
+            - containerPort: 8265
+              name: dashboard
+            - containerPort: 10001
+              name: client
+            - containerPort: 8000
+              name: serve
+            volumeMounts:
+            - mountPath: /home/ray/vllm_app.py
+              name: vllm-code
+              subPath: vllm_app.py
+          volumes:
+          - name: vllm-code
+            configMap:
+              name: vllm-app-code
+    
+    workerGroupSpecs:
+    - replicas: 1
+      minReplicas: 1
+      maxReplicas: 1
+      groupName: gpu-worker-group
+      rayStartParams:
+        num-gpus: '1'
+      template:
+        spec:
+          containers:
+          - name: ray-worker
+            image: rayproject/ray-llm:2.49.1-py311-cu128
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/bin/sh", "-c", "ray stop"]
+            readinessProbe:
+              exec:
+                command:
+                - bash
+                - -c
+                - wget --tries 1 -T 2 -q -O- http://localhost:52365/api/local_raylet_healthz | grep success
+              initialDelaySeconds: 10
+              periodSeconds: 5
+              timeoutSeconds: 2
+              successThreshold: 1
+              failureThreshold: 1
+            resources:
+              limits:
+                cpu: 2
+                memory: 8Gi
+                nvidia.com/gpu: 1
+              requests:
+                cpu: 1
+                memory: 4Gi
+                nvidia.com/gpu: 1
+            env:
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0"
+            - name: PYTHONPATH
+              value: "/home/ray:$PYTHONPATH"
+            volumeMounts:
+            - mountPath: /home/ray/vllm_app.py
+              name: vllm-code
+              subPath: vllm_app.py
+          volumes:
+          - name: vllm-code
+            configMap:
+              name: vllm-app-code
+          tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: nvidia.com/gpu-type
+            operator: Equal
+            value: nvidia-tesla-t4
+            effect: NoSchedule

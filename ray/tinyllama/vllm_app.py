@@ -1,0 +1,67 @@
+from ray import serve
+from vllm import LLM, SamplingParams
+
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 1,
+    }
+)
+class VLLMDeployment:
+    def __init__(self):
+        self.llm = LLM(
+            model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            max_model_len=1024,  # Reduced from 2048
+            gpu_memory_utilization=0.80,  # Reduced from 0.85
+            tensor_parallel_size=1,
+            dtype="float16",
+            enforce_eager=True,  # Disable CUDA graphs to save memory
+            max_num_seqs=4,  # Limit concurrent sequences
+            max_num_batched_tokens=1024  # Limit batch size
+        )
+    
+    async def __call__(self, request):
+        data = await request.json()
+        messages = data.get("messages", [])
+        
+        # Format prompt for TinyLlama chat format
+        prompt = ""
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "system":
+                prompt += f"<|system|>\n{content}\n"
+            elif role == "user":
+                prompt += f"<|user|>\n{content}\n"
+            elif role == "assistant":
+                prompt += f"<|assistant|>\n{content}\n"
+        prompt += "<|assistant|>\n"
+        
+        # Generate response
+        sampling_params = SamplingParams(
+            temperature=data.get("temperature", 0.7),
+            top_p=data.get("top_p", 0.9),
+            max_tokens=data.get("max_tokens", 512)
+        )
+        
+        outputs = self.llm.generate([prompt], sampling_params)
+        generated_text = outputs[0].outputs[0].text
+        
+        # Return OpenAI-compatible format
+        return {
+            "id": "chatcmpl-123",
+            "object": "chat.completion",
+            "created": 1677652288,
+            "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": generated_text
+                },
+                "finish_reason": "stop"
+            }]
+        }
+
+deployment = VLLMDeployment.bind()

@@ -1,0 +1,26 @@
+---
+# Handlers for tinyllama_deploy role
+
+- name: namespace_created
+  ansible.builtin.debug:
+    msg: "Namespace {{ kubernetes.namespace }} has been created"
+
+- name: kuberay_installed
+  ansible.builtin.debug:
+    msg: "KubeRay operator has been installed successfully"
+
+- name: configmap_created
+  ansible.builtin.debug:
+    msg: "ConfigMap {{ kubernetes.config_map_name }} has been created"
+
+- name: rayservice_deleted
+  ansible.builtin.debug:
+    msg: "Old RayService {{ kubernetes.deployment_name }} has been deleted"
+
+- name: rayservice_deployed
+  ansible.builtin.debug:
+    msg: "RayService {{ kubernetes.deployment_name }} has been deployed"
+
+- name: deployment_verified
+  ansible.builtin.debug:
+    msg: "Deployment has been verified successfully"

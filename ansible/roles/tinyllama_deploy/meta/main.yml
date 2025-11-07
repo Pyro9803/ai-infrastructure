@@ -1,0 +1,34 @@
+---
+# Role: tinyllama_deploy
+# Description: Deploy TinyLlama model to GKE with Ray Serve
+# Author: DevOps Team
+# Version: 1.0.0
+
+galaxy_info:
+  author: DevOps Team
+  description: Deploy TinyLlama AI model on Kubernetes with Ray Serve
+  company: Your Company
+  
+  license: MIT
+  
+  min_ansible_version: "2.10"
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+  
+  galaxy_tags:
+    - kubernetes
+    - gke
+    - ai
+    - ml
+    - ray
+    - llm
+    - deployment
+
+dependencies: []

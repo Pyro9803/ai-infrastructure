@@ -1,0 +1,43 @@
+---
+# Main tasks file for tinyllama_deploy role
+
+- name: Include preflight checks
+  ansible.builtin.include_tasks: preflight.yml
+  tags: [always, preflight]
+
+- name: Include Terraform integration tasks
+  ansible.builtin.include_tasks: terraform.yml
+  tags: [always, terraform]
+
+- name: Include cluster configuration tasks
+  ansible.builtin.include_tasks: configure_cluster.yml
+  tags: [always, configure]
+
+- name: Include KubeRay operator installation
+  ansible.builtin.include_tasks: install_kuberay.yml
+  tags: [always, kuberay]
+
+- name: Include prerequisites check tasks
+  ansible.builtin.include_tasks: prerequisites.yml
+  tags: [always, prerequisites]
+
+- name: Include namespace tasks
+  ansible.builtin.include_tasks: namespace.yml
+  tags: [always, namespace]
+
+- name: Include deployment tasks
+  ansible.builtin.include_tasks: deploy.yml
+  tags: [deploy]
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml
+  tags: [deploy, verify]
+
+- name: Include testing tasks
+  ansible.builtin.include_tasks: test.yml
+  tags: [verify, test]
+  when: testing.enabled | bool
+
+- name: Display deployment summary
+  ansible.builtin.include_tasks: summary.yml
+  tags: [always]

@@ -1,0 +1,57 @@
+replicaCount: 1
+
+# Image pull secrets for private registries (e.g., GKE Artifact Registry)
+imagePullSecrets: []
+# Example:
+# - name: gcr-json-key
+nameOverride: ""
+fullnameOverride: ""
+
+# Frontend (nginx) configuration
+frontend:
+  image:
+    repository: asia-southeast1-docker.pkg.dev/aerial-jigsaw-472804-r0/dev-artifact-repo/open-webui-fe
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Backend (Python API) configuration
+backend:
+  image:
+    repository: asia-southeast1-docker.pkg.dev/aerial-jigsaw-472804-r0/dev-artifact-repo/open-webui-be
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+service:
+  type: ClusterIP
+  port: 80
+  backendPort: 8080
+
+# Secret configuration
+secret:
+  create: true
+  webuiSecretKey: ""  # Leave empty to auto-generate, or set your own
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: "standard-rwo"  # GKE default storage class
+
+# Environment variables for backend
+env:
+  ENABLE_SIGNUP: "true"
+  # WEBUI_SECRET_KEY is now handled via secret.yaml
+  # Add other environment variables here as needed

@@ -1,0 +1,45 @@
+# Ansible gitignore
+
+# Log files
+*.log
+ansible.log
+
+# Retry files
+*.retry
+retry/
+
+# Vault password files
+.vault_pass
+.vault_password
+
+# Ansible facts cache
+/tmp/ansible_facts/
+*.facts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp

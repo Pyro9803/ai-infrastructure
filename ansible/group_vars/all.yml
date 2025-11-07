@@ -1,0 +1,51 @@
+---
+# Global variables for all environments
+
+# Default environment
+deploy_environment: dev
+
+# Project paths
+project_root: "{{ playbook_dir }}/../../.."
+deployment_source_dir: "{{ project_root }}/ray/tinyllama"
+
+# Kubernetes configuration
+kubernetes:
+  namespace: ai
+  deployment_name: tinyllama-service
+  config_map_name: vllm-app-code
+
+# Timeouts (in seconds)
+timeouts:
+  pod_ready: 600
+  deployment_ready: 900
+  service_ready: 300
+  serve_ready: 600
+
+# Model configuration
+model:
+  name: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+  replica_count: 1
+  test_prompt: "Hello! What can you help me with?"
+  test_max_tokens: 50
+
+# Resource requirements
+resources:
+  gpu_required: true
+  min_gpu_nodes: 1
+
+# Testing and verification
+testing:
+  enabled: true
+  test_endpoint: true
+  run_health_checks: true
+
+# Monitoring and logging
+monitoring:
+  enabled: false
+  log_level: INFO
+
+# Deployment configuration
+deployment:
+  strategy: replace  # replace or rolling
+  cleanup_on_failure: true
+  wait_for_ready: true

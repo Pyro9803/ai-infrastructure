@@ -1,0 +1,60 @@
+---
+# Default variables for tinyllama_deploy role
+# These can be overridden in group_vars or host_vars
+
+# Environment (set via group_vars or extra vars)
+deploy_environment: dev
+terraform_env: "{{ deploy_environment }}"
+
+# Paths
+project_root: "{{ playbook_dir }}/../../.."
+terraform_dir: "{{ project_root }}/src/terraform/envs/{{ terraform_env }}"
+deployment_dir: "{{ project_root }}/src/ray/tinyllama"
+
+# Kubernetes
+kubernetes:
+  namespace: ai
+  deployment_name: tinyllama-service
+  config_map_name: vllm-app-code
+
+# KubeRay operator configuration
+kuberay:
+  operator_version: "1.4.2"
+  install_timeout: "5m"
+  ready_timeout: 300
+
+# Timeouts (in seconds)
+timeouts:
+  pod_ready: 1200  # 20 minutes for large image pulls
+  deployment_ready: 1800
+  service_ready: 600
+  serve_ready: 900
+
+# Model configuration
+model:
+  name: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+  replica_count: 1
+  test_prompt: "Hello! What can you help me with?"
+  test_max_tokens: 50
+
+# Resource requirements
+resources:
+  gpu_required: true
+  min_gpu_nodes: 1
+
+# Testing and verification
+testing:
+  enabled: true
+  test_endpoint: true
+  run_health_checks: true
+
+# Monitoring and logging
+monitoring:
+  enabled: false
+  log_level: INFO
+
+# Deployment strategy
+deployment:
+  strategy: rolling  # replace or rolling
+  cleanup_on_failure: true
+  wait_for_ready: true

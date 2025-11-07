@@ -1,0 +1,123 @@
+---
+# Deployment tasks for TinyLlama model
+
+- name: Check if vllm_app.py exists
+  ansible.builtin.stat:
+    path: "{{ deployment_dir }}/vllm_app.py"
+  register: vllm_app_file
+
+- name: Fail if vllm_app.py not found
+  ansible.builtin.fail:
+    msg: "vllm_app.py not found at {{ deployment_dir }}/vllm_app.py"
+  when: not vllm_app_file.stat.exists
+
+- name: Check if ConfigMap already exists
+  ansible.builtin.command: kubectl get configmap -n {{ kubernetes.namespace }} {{ kubernetes.config_map_name }}
+  register: configmap_check
+  changed_when: false
+  failed_when: false
+
+- name: Delete existing ConfigMap if exists
+  ansible.builtin.command: kubectl delete configmap -n {{ kubernetes.namespace }} {{ kubernetes.config_map_name }}
+  when: configmap_check.rc == 0
+  register: configmap_deleted
+
+- name: Create ConfigMap from vllm_app.py
+  ansible.builtin.command:
+    cmd: >
+      kubectl create configmap -n {{ kubernetes.namespace }} {{ kubernetes.config_map_name }}
+      --from-file=vllm_app.py={{ deployment_dir }}/vllm_app.py
+  register: configmap_created
+  notify: configmap_created
+
+- name: ConfigMap creation status
+  ansible.builtin.debug:
+    msg: "ConfigMap created successfully"
+  when: configmap_created.changed
+
+- name: Check if RayService already exists
+  ansible.builtin.command: kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }}
+  register: rayservice_check
+  changed_when: false
+  failed_when: false
+
+- name: Delete existing RayService if exists
+  ansible.builtin.command: kubectl delete rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }}
+  when: rayservice_check.rc == 0
+  register: rayservice_deleted
+  notify: rayservice_deleted
+
+- name: Wait for old RayService to be deleted
+  ansible.builtin.command: kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }}
+  register: deletion_check
+  until: deletion_check.rc != 0
+  retries: 30
+  delay: 10
+  failed_when: false
+  when: rayservice_deleted.changed
+
+- name: Apply RayService manifest
+  ansible.builtin.command:
+    cmd: kubectl apply -f {{ deployment_dir }}/tinyllama-rayservice.yaml
+  register: rayservice_applied
+  notify: rayservice_deployed
+
+- name: Wait for RayService to be created
+  ansible.builtin.command: kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }}
+  register: rayservice_exists
+  until: rayservice_exists.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Get Ray cluster name
+  ansible.builtin.shell: |
+    ACTIVE=$(kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }} \
+      -o jsonpath='{.status.activeServiceStatus.rayClusterName}' 2>/dev/null || echo "")
+    PENDING=$(kubectl get rayservice -n {{ kubernetes.namespace }} {{ kubernetes.deployment_name }} \
+      -o jsonpath='{.status.pendingServiceStatus.rayClusterName}' 2>/dev/null || echo "")
+    if [ -n "$ACTIVE" ]; then
+      echo "$ACTIVE"
+    elif [ -n "$PENDING" ]; then
+      echo "$PENDING"
+    fi
+  register: ray_cluster_name_output
+  changed_when: false
+  retries: 10
+  delay: 10
+  until: ray_cluster_name_output.stdout != ""
+
+- name: Set Ray cluster name fact
+  ansible.builtin.set_fact:
+    ray_cluster_name: "{{ ray_cluster_name_output.stdout }}"
+
+- name: Display Ray cluster name
+  ansible.builtin.debug:
+    msg: "Ray Cluster: {{ ray_cluster_name }}"
+
+- name: Wait for head pod to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready \
+    pod -n {{ kubernetes.namespace }} \
+    -l ray.io/cluster={{ ray_cluster_name }},ray.io/node-type=head \
+    --timeout={{ timeouts.pod_ready }}s
+  register: head_pod_ready
+  changed_when: false
+
+- name: Wait for worker pods to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready \
+    pod -n {{ kubernetes.namespace }} \
+    -l ray.io/cluster={{ ray_cluster_name }},ray.io/node-type=worker \
+    --timeout={{ timeouts.pod_ready }}s
+  register: worker_pod_ready
+  changed_when: false
+
+- name: Get pod status
+  ansible.builtin.command: kubectl get pods -n {{ kubernetes.namespace }} -l ray.io/cluster={{ ray_cluster_name }}
+  register: pod_status
+  changed_when: false
+
+- name: Display pod status
+  ansible.builtin.debug:
+    var: pod_status.stdout_lines
