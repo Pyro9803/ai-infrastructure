@@ -10,6 +10,23 @@ resource "google_project_iam_member" "artifact_reader" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.artifact_registry_sa.email}"
 }
+# If a repository name is provided, grant the role on that repository only.
+resource "google_artifact_registry_repository_iam_member" "artifact_reader_repo" {
+  count      = var.repo_name != "" ? 1 : 0
+  project    = var.project_id
+  location   = var.repo_location
+  repository = var.repo_name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.artifact_registry_sa.email}"
+}
+
+# Fallback: if no repo_name provided, grant project-level role
+resource "google_project_iam_member" "artifact_reader_project" {
+  count   = var.repo_name == "" ? 1 : 0
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.artifact_registry_sa.email}"
+}
 
 # Bind Workload Identity between KSA and GSA so Pods can impersonate
 resource "google_service_account_iam_member" "wi_binding" {

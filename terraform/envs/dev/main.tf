@@ -115,6 +115,8 @@ module "wif_gke" {
   gsa_name           = "artifact-registry-sa"
   gsa_display_name   = "GKE Workloads Service Account"
   # repo_name is optional; leaving empty will grant project-level artifactregistry role
+  repo_name          = "dev-artifact-repo"
+  repo_location      = var.region
   namespace          = "test-wi"
   ksa_name           = "openwebui-ksa"
 

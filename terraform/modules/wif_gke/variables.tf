@@ -20,6 +20,12 @@ variable "repo_name" {
   default     = ""
 }
 
+variable "repo_location" {
+  description = "Artifact Registry repository location (region)"
+  type        = string
+  default     = ""
+}
+
 variable "namespace" {
   description = "Kubernetes namespace where the KSA will be created"
   type        = string
