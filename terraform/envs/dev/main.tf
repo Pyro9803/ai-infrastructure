@@ -59,6 +59,17 @@ module "gke" {
   gke_gpu_node_locations     = var.gke_gpu_node_locations
 }
 
+# Data for Kubernetes provider (use current Google credentials to get token)
+data "google_client_config" "current" {}
+
+# Kubernetes provider configured to talk to the GKE cluster created by module.gke
+provider "kubernetes" {
+  host                   = "https://${module.gke.gke_cluster_endpoint}"
+  token                  = data.google_client_config.current.access_token
+  cluster_ca_certificate = base64decode(module.gke.gke_cluster_ca_certificate)
+
+}
+
 module "cloud_sql_db" {
   source = "../../modules/database"
 
@@ -95,4 +106,17 @@ module "service_account" {
   display_name = var.display_name
   iam_roles    = var.iam_roles
   project_id   = var.project_id
+}
+
+module "wif_gke" {
+  source = "../../modules/wif_gke"
+
+  project_id         = var.project_id
+  gsa_name           = "artifact-registry-sa"
+  gsa_display_name   = "GKE Workloads Service Account"
+  # repo_name is optional; leaving empty will grant project-level artifactregistry role
+  namespace          = "test-wi"
+  ksa_name           = "openwebui-ksa"
+
+  depends_on = [module.gke, module.artifact_registry]
 }
