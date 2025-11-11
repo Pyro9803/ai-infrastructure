@@ -102,6 +102,15 @@ module "artifact_registry" {
   depends_on = [module.workload_identity]
 }
 
+module "storage" {
+  source     = "../../modules/storage"
+  project_id = var.project_id
+  # WARNING: bucket names must be globally unique. Change to a unique name for your project.
+  bucket_name = "ai-infra-dev-storage-${var.project_id}"
+  location    = var.region
+  force_destroy = false
+}
+
 module "service_account" {
   source = "../../modules/service-account"
 
@@ -117,11 +126,13 @@ module "wif_gke" {
   project_id         = var.project_id
   gsa_name           = "artifact-registry-sa"
   gsa_display_name   = "GKE Workloads Service Account"
-  # repo_name is optional; leaving empty will grant project-level artifactregistry role
-  repo_name          = "dev-artifact-repo"
-  repo_location      = var.region
+  # repo_name          = "dev-artifact-repo"
+  # repo_location      = var.region
   namespace          = "test-wi"
   ksa_name           = "openwebui-ksa"
 
-  depends_on = [module.gke, module.artifact_registry]
+  # Grant storage IAM after the storage bucket is created
+  storage_bucket_name = module.storage.bucket_name
+
+  depends_on = [module.gke, module.artifact_registry, module.storage]
 }

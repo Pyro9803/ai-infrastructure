@@ -1,256 +1,171 @@
-#!/bin/bash
+param(
+    [Parameter(Position=0)]
+    [string]$Command
+)
 
-set -e
+# ===============================
+# Open WebUI Build & Push Script (Windows PowerShell)
+# (mirrors .sh behavior)
+# ===============================
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+$ErrorActionPreference = "Stop"
 
-# Configuration
-# PROJECT_ID="${GCP_PROJECT_ID:-your-project-id}"
-# REGION="${GCP_REGION:-us-central1}"
-# REPOSITORY="${AR_REPOSITORY:-open-webui}"
-# REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
-# GCP Project Configuration
-PROJECT_ID="aerial-jigsaw-472804-r0"
-REGION="asia-southeast1"
-REPOSITORY="dev-artifact-repo"
-REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
+function Print-Info($msg)  { Write-Host "[INFO]  $msg" -ForegroundColor Green }
+function Print-Warn($msg)  { Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
+function Print-Error($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
-FE_IMAGE_NAME="open-webui-fe"
-BE_IMAGE_NAME="open-webui-be"
-IMAGE_TAG="${IMAGE_TAG:-latest}"
+# ----- Defaults (can be overridden by env like the .sh) -----
+$PROJECT_ID  = "ai-infra-475703"
+$REGION      = "us-central1"
+$REPOSITORY  = "dev-artifact-repo"
+$FE_IMAGE_NAME = "open-webui-fe"
+$BE_IMAGE_NAME = "open-webui-be"
 
-# Function to print colored output
-print_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+# ----- Read env overrides (to match .sh behavior) -----
+if ($env:GCP_PROJECT_ID) { $PROJECT_ID = $env:GCP_PROJECT_ID }
+if ($env:GCP_REGION)     { $REGION     = $env:GCP_REGION }
+if ($env:AR_REPOSITORY)  { $REPOSITORY = $env:AR_REPOSITORY }
+
+$REGISTRY = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
+
+$IMAGE_TAG = $env:IMAGE_TAG
+if (-not $IMAGE_TAG) { $IMAGE_TAG = "latest" }
+
+# ----- Functions -----
+
+function Show-Usage {
+    $lines = @(
+        "Usage: .\build-push.ps1 <option>",
+        "",
+        "Build and push Open WebUI Docker images to Google Artifact Registry",
+        "",
+        "OPTIONS:",
+        "    build-fe            Build frontend image only",
+        "    build-be            Build backend image only",
+        "    build-all           Build both frontend and backend images",
+        "",
+        "    push-fe             Push frontend image (must be built first)",
+        "    push-be             Push backend image (must be built first)",
+        "    push-all            Push both images (must be built first)",
+        "",
+        "    all                 Build and push both images",
+        "    fe                  Build and push frontend image only",
+        "    be                  Build and push backend image only",
+        "",
+        "    clean               Remove local images",
+        "",
+        "    help, --help, -h    Show this help message",
+        "",
+        "ENVIRONMENT VARIABLES:",
+        "    GCP_PROJECT_ID      GCP Project ID (default from script)",
+        "    GCP_REGION          GCP Region (default from script)",
+        "    AR_REPOSITORY       Artifact Registry repository name (default from script)",
+        "    IMAGE_TAG           Docker image tag (default: latest)",
+        "",
+        "EXAMPLES:",
+        '    $env:GCP_PROJECT_ID="my-project"; $env:GCP_REGION="us-central1"; $env:IMAGE_TAG="v1.0.0"',
+        "    .\build-push.ps1 fe",
+        "    .\build-push.ps1 be",
+        "    .\build-push.ps1 all",
+        "    .\build-push.ps1 build-all",
+        "    .\build-push.ps1 push-all"
+    )
+    foreach ($l in $lines) { Write-Host $l }
 }
 
-print_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Function to check if gcloud is authenticated
-check_gcloud_auth() {
-    print_info "Checking gcloud authentication..."
-    if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q "@"; then
-        print_error "Not authenticated with gcloud. Please run: gcloud auth login"
+function Check-GcloudAuth {
+    Print-Info "Checking gcloud authentication..."
+    & gcloud.cmd auth list --filter=status:ACTIVE --format="value(account)" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Print-Error "Not authenticated with gcloud. Run 'gcloud auth login'"
         exit 1
-    fi
-    print_info "✓ Authenticated with gcloud"
+    }
+    $account = (& gcloud.cmd auth list --filter=status:ACTIVE --format="value(account)")
+    Print-Info "Authenticated as $account"
 }
 
-# Function to configure docker for artifact registry
-configure_docker() {
-    print_info "Configuring Docker for Artifact Registry..."
-    gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-    print_info "✓ Docker configured"
+function Configure-Docker {
+    Print-Info "Configuring Docker for Artifact Registry..."
+    & gcloud.cmd auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+    if ($LASTEXITCODE -ne 0) { Print-Error "Failed to configure docker auth"; exit 1 }
+    Print-Info "Docker configured"
 }
 
-# Function to create artifact registry repository if not exists
-create_repository() {
-    print_info "Checking if Artifact Registry repository exists..."
-    if ! gcloud artifacts repositories describe ${REPOSITORY} \
-        --location=${REGION} \
-        --project=${PROJECT_ID} &>/dev/null; then
-        
-        print_warn "Repository does not exist. Creating..."
-        gcloud artifacts repositories create ${REPOSITORY} \
-            --repository-format=docker \
-            --location=${REGION} \
-            --description="Open WebUI Docker images" \
-            --project=${PROJECT_ID}
-        print_info "✓ Repository created"
-    else
-        print_info "✓ Repository exists"
-    fi
+function Create-Repository {
+    Print-Info "Checking Artifact Registry repository..."
+    # Quiet, return-only check
+    & gcloud.cmd artifacts repositories describe $REPOSITORY `
+      --location=$REGION --project=$PROJECT_ID `
+      --format="get(name)" --verbosity=error > $null 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Print-Info "Repository exists"
+        return
+    }
+    Print-Warn "Repository does not exist. Creating..."
+    & gcloud.cmd artifacts repositories create $REPOSITORY `
+      --repository-format=docker --location=$REGION `
+      --description="Open WebUI Docker images" --project=$PROJECT_ID --verbosity=error
+    if ($LASTEXITCODE -ne 0) { Print-Error "Failed to create repository"; exit 1 }
+    Print-Info "Repository created"
 }
 
-# Function to build frontend image
-build_fe() {
-    print_info "Building frontend image..."
-    docker build -f Dockerfile.fe -t ${FE_IMAGE_NAME}:${IMAGE_TAG} .
-    print_info "✓ Frontend image built: ${FE_IMAGE_NAME}:${IMAGE_TAG}"
+function Build-FE {
+    Print-Info "Building frontend image..."
+    & docker build -f Dockerfile.fe -t "${FE_IMAGE_NAME}:${IMAGE_TAG}" .
+    if ($LASTEXITCODE -ne 0) { Print-Error "Build FE failed"; exit 1 }
+    Print-Info "Frontend image built: ${FE_IMAGE_NAME}:${IMAGE_TAG}"
 }
 
-# Function to build backend image
-build_be() {
-    print_info "Building backend image..."
-    docker build -f Dockerfile.be -t ${BE_IMAGE_NAME}:${IMAGE_TAG} .
-    print_info "✓ Backend image built: ${BE_IMAGE_NAME}:${IMAGE_TAG}"
+function Build-BE {
+    Print-Info "Building backend image..."
+    & docker build -f Dockerfile.be -t "${BE_IMAGE_NAME}:${IMAGE_TAG}" .
+    if ($LASTEXITCODE -ne 0) { Print-Error "Build BE failed"; exit 1 }
+    Print-Info "Backend image built: ${BE_IMAGE_NAME}:${IMAGE_TAG}"
 }
 
-# Function to tag and push frontend image
-push_fe() {
-    print_info "Tagging and pushing frontend image..."
-    
-    # Tag for registry
-    docker tag ${FE_IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}
-    
-    # Push to registry
-    docker push ${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}
-    
-    print_info "✓ Frontend image pushed: ${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}"
+function Push-FE {
+    Print-Info "Tagging and pushing frontend image..."
+    & docker tag  "${FE_IMAGE_NAME}:${IMAGE_TAG}" "${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}"
+    if ($LASTEXITCODE -ne 0) { Print-Error "Tag FE failed"; exit 1 }
+    & docker push "${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}"
+    if ($LASTEXITCODE -ne 0) { Print-Error "Push FE failed"; exit 1 }
+    Print-Info "Frontend image pushed: ${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}"
 }
 
-# Function to tag and push backend image
-push_be() {
-    print_info "Tagging and pushing backend image..."
-    
-    # Tag for registry
-    docker tag ${BE_IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}
-    
-    # Push to registry
-    docker push ${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}
-    
-    print_info "✓ Backend image pushed: ${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}"
+function Push-BE {
+    Print-Info "Tagging and pushing backend image..."
+    & docker tag  "${BE_IMAGE_NAME}:${IMAGE_TAG}" "${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}"
+    if ($LASTEXITCODE -ne 0) { Print-Error "Tag BE failed"; exit 1 }
+    & docker push "${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}"
+    if ($LASTEXITCODE -ne 0) { Print-Error "Push BE failed"; exit 1 }
+    Print-Info "Backend image pushed: ${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}"
 }
 
-# Function to display usage
-usage() {
-    cat << EOF
-Usage: $0 [OPTION]
-
-Build and push Open WebUI Docker images to Google Artifact Registry
-
-OPTIONS:
-    build-fe            Build frontend image only
-    build-be            Build backend image only
-    build-all           Build both frontend and backend images
-    
-    push-fe             Push frontend image (must be built first)
-    push-be             Push backend image (must be built first)
-    push-all            Push both images (must be built first)
-    
-    all                 Build and push both images
-    fe                  Build and push frontend image only
-    be                  Build and push backend image only
-    
-    clean               Remove local images
-    
-    help                Show this help message
-
-ENVIRONMENT VARIABLES:
-    GCP_PROJECT_ID      GCP Project ID (default: your-project-id)
-    GCP_REGION          GCP Region (default: us-central1)
-    AR_REPOSITORY       Artifact Registry repository name (default: open-webui)
-    IMAGE_TAG           Docker image tag (default: latest)
-
-EXAMPLES:
-    # Set environment variables
-    export GCP_PROJECT_ID=my-project
-    export GCP_REGION=us-central1
-    export IMAGE_TAG=v1.0.0
-    
-    # Build and push frontend only
-    $0 fe
-    
-    # Build and push backend only
-    $0 be
-    
-    # Build and push both
-    $0 all
-    
-    # Build only (no push)
-    $0 build-all
-    
-    # Push existing images
-    $0 push-all
-
-EOF
+function Clean {
+    Print-Info "Removing local images..."
+    & docker rmi "${FE_IMAGE_NAME}:${IMAGE_TAG}" -f > $null 2>&1
+    & docker rmi "${BE_IMAGE_NAME}:${IMAGE_TAG}" -f > $null 2>&1
+    & docker rmi "${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG}" -f > $null 2>&1
+    & docker rmi "${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG}" -f > $null 2>&1
+    Print-Info "Cleanup complete"
 }
 
-# Function to clean local images
-clean() {
-    print_info "Removing local images..."
-    docker rmi ${FE_IMAGE_NAME}:${IMAGE_TAG} 2>/dev/null || true
-    docker rmi ${BE_IMAGE_NAME}:${IMAGE_TAG} 2>/dev/null || true
-    docker rmi ${REGISTRY}/${FE_IMAGE_NAME}:${IMAGE_TAG} 2>/dev/null || true
-    docker rmi ${REGISTRY}/${BE_IMAGE_NAME}:${IMAGE_TAG} 2>/dev/null || true
-    print_info "✓ Cleanup complete"
+# ----- Main -----
+if (-not $Command) { Show-Usage; exit 1 }
+
+switch ($Command) {
+    "build-fe"   { Build-FE }
+    "build-be"   { Build-BE }
+    "build-all"  { Build-FE; Build-BE }
+    "push-fe"    { Check-GcloudAuth; Configure-Docker; Create-Repository; Push-FE }
+    "push-be"    { Check-GcloudAuth; Configure-Docker; Create-Repository; Push-BE }
+    "push-all"   { Check-GcloudAuth; Configure-Docker; Create-Repository; Push-FE; Push-BE }
+    "fe"         { Build-FE; Check-GcloudAuth; Configure-Docker; Create-Repository; Push-FE }
+    "be"         { Build-BE; Check-GcloudAuth; Configure-Docker; Create-Repository; Push-BE }
+    "all"        { Build-FE; Build-BE; Check-GcloudAuth; Configure-Docker; Create-Repository; Push-FE; Push-BE }
+    "clean"      { Clean }
+    "help" | "--help" | "-h" { Show-Usage }
+    default      { Print-Error "Unknown option: $Command"; Show-Usage; exit 1 }
 }
 
-# Main script logic
-main() {
-    if [ $# -eq 0 ]; then
-        usage
-        exit 1
-    fi
-
-    case "$1" in
-        build-fe)
-            build_fe
-            ;;
-        build-be)
-            build_be
-            ;;
-        build-all)
-            build_fe
-            build_be
-            ;;
-        push-fe)
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_fe
-            ;;
-        push-be)
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_be
-            ;;
-        push-all)
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_fe
-            push_be
-            ;;
-        fe)
-            build_fe
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_fe
-            ;;
-        be)
-            build_be
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_be
-            ;;
-        all)
-            build_fe
-            build_be
-            check_gcloud_auth
-            configure_docker
-            create_repository
-            push_fe
-            push_be
-            ;;
-        clean)
-            clean
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
-            print_error "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-    esac
-
-    print_info "✨ Done!"
-}
-
-# Run main function
-main "$@"
+Write-Host "Done."

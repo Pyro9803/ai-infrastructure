@@ -37,3 +37,15 @@ variable "ksa_name" {
   type        = string
   default     = "ksa-workload"
 }
+
+variable "storage_bucket_name" {
+  description = "(Optional) GCS bucket name to grant the GSA access to. Leave empty to skip creating bucket IAM binding."
+  type        = string
+  default     = ""
+}
+
+variable "storage_roles" {
+  description = "List of roles to grant on the bucket (e.g., [\"roles/storage.objectViewer\", \"roles/storage.objectCreator\"]). Default grants viewer+creator."
+  type        = list(string)
+  default     = ["roles/storage.objectViewer", "roles/storage.objectCreator"]
+}
