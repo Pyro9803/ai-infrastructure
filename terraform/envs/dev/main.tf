@@ -124,12 +124,12 @@ module "wif_gke" {
   source = "../../modules/wif_gke"
 
   project_id         = var.project_id
-  gsa_name           = "artifact-registry-sa"
-  gsa_display_name   = "GKE Workloads Service Account"
+  gsa_name           = var.gsa_name
+  gsa_display_name   = var.gsa_display_name
   # repo_name          = "dev-artifact-repo"
   # repo_location      = var.region
-  namespace          = "test-wi"
-  ksa_name           = "openwebui-ksa"
+  namespace          = var.k8s_namespace
+  ksa_name           = var.k8s_service_account_name
 
   # Grant storage IAM after the storage bucket is created
   storage_bucket_name = module.storage.bucket_name

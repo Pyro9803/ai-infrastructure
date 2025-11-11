@@ -298,3 +298,40 @@ variable "enable_apis" {
     "servicenetworking.googleapis.com"
   ]
 }
+
+# Workload Identity / GKE wiring
+variable "gsa_name" {
+  description = "Service account id (short name) to create for workloads"
+  type        = string
+  default     = "artifact-registry-sa"
+}
+
+variable "gsa_display_name" {
+  description = "Display name for the GSA"
+  type        = string
+  default     = "GKE Workloads Service Account"
+}
+
+variable "repo_name" {
+  description = "Artifact Registry repository name (optional)"
+  type        = string
+  default     = "dev-artifact-repo"
+}
+
+variable "repo_location" {
+  description = "Artifact Registry repository location (region)"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "k8s_namespace" {
+  description = "Kubernetes namespace where the KSA will be created"
+  type        = string
+  default     = "test-wi"
+}
+
+variable "k8s_service_account_name" {
+  description = "Kubernetes ServiceAccount name to create"
+  type        = string
+  default     = "openwebui-ksa"
+}
