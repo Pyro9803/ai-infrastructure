@@ -8,8 +8,7 @@ resource "google_project_iam_member" "gke_node_sa_roles" {
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
     "roles/monitoring.viewer",
-    "roles/stackdriver.resourceMetadata.writer",
-    "roles/artifactregistry.reader"
+    "roles/stackdriver.resourceMetadata.writer"
   ])
 
   project = var.project_id
@@ -92,6 +91,18 @@ resource "google_container_node_pool" "cpu_pool" {
     auto_repair  = true
     auto_upgrade = true
   }
+}
+
+# Grant repo-scoped Artifact Registry read permission to the node service account
+# This is conditional: only created when module variables provide a repository name.
+resource "google_artifact_registry_repository_iam_member" "node_repo_reader" {
+  count      = var.artifact_registry_repo_name != "" ? 1 : 0
+  project    = var.project_id
+  location   = var.artifact_registry_repo_location
+  repository = var.artifact_registry_repo_name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.gke_node_sa.email}"
+
 }
 
 resource "google_container_node_pool" "gpu_pool" {

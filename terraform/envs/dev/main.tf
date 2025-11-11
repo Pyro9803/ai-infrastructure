@@ -57,6 +57,9 @@ module "gke" {
   gke_gpu_spot               = var.gke_gpu_spot
   gke_gpu_driver_version     = var.gke_gpu_driver_version
   gke_gpu_node_locations     = var.gke_gpu_node_locations
+  # Limit node image-pull permission to a single Artifact Registry repository
+  artifact_registry_repo_name     = var.repositories[0].repository_id
+  artifact_registry_repo_location = var.region
 }
 
 # Data for Kubernetes provider (use current Google credentials to get token)

@@ -150,3 +150,15 @@ variable "gke_cpu_spot" {
   description = "Whether to use spot instances for the CPU node pool"
   default     = false
 }
+
+variable "artifact_registry_repo_name" {
+  description = "(Optional) Artifact Registry repository name to which node service account should have read access. Leave empty to skip creating repo-scoped binding."
+  type        = string
+  default     = ""
+}
+
+variable "artifact_registry_repo_location" {
+  description = "(Optional) Location of the Artifact Registry repository (e.g. us-central1). Required when artifact_registry_repo_name is set."
+  type        = string
+  default     = ""
+}
