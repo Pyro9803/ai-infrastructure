@@ -57,6 +57,20 @@ module "gke" {
   gke_gpu_spot               = var.gke_gpu_spot
   gke_gpu_driver_version     = var.gke_gpu_driver_version
   gke_gpu_node_locations     = var.gke_gpu_node_locations
+  # Limit node image-pull permission to a single Artifact Registry repository
+  artifact_registry_repo_name     = var.repositories[0].repository_id
+  artifact_registry_repo_location = var.region
+}
+
+# Data for Kubernetes provider (use current Google credentials to get token)
+data "google_client_config" "current" {}
+
+# Kubernetes provider configured to talk to the GKE cluster created by module.gke
+provider "kubernetes" {
+  host                   = "https://${module.gke.gke_cluster_endpoint}"
+  token                  = data.google_client_config.current.access_token
+  cluster_ca_certificate = base64decode(module.gke.gke_cluster_ca_certificate)
+
 }
 
 module "cloud_sql_db" {
@@ -88,6 +102,15 @@ module "artifact_registry" {
   depends_on = [module.workload_identity]
 }
 
+module "storage" {
+  source     = "../../modules/storage"
+  project_id = var.project_id
+  # WARNING: bucket names must be globally unique. Change to a unique name for your project.
+  bucket_name = "ai-infra-dev-storage-${var.project_id}"
+  location    = var.region
+  force_destroy = false
+}
+
 module "service_account" {
   source = "../../modules/service-account"
 
@@ -95,4 +118,21 @@ module "service_account" {
   display_name = var.display_name
   iam_roles    = var.iam_roles
   project_id   = var.project_id
+}
+
+module "wif_gke" {
+  source = "../../modules/wif_gke"
+
+  project_id         = var.project_id
+  gsa_name           = var.gsa_name
+  gsa_display_name   = var.gsa_display_name
+  # repo_name          = "dev-artifact-repo"
+  # repo_location      = var.region
+  namespace          = var.k8s_namespace
+  ksa_name           = var.k8s_service_account_name
+
+  # Grant storage IAM after the storage bucket is created
+  storage_bucket_name = module.storage.bucket_name
+
+  depends_on = [module.gke, module.artifact_registry, module.storage]
 }
