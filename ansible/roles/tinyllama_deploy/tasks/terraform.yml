@@ -3,36 +3,36 @@
 
 - name: Check if Terraform state exists
   ansible.builtin.stat:
-    path: "{{ terraform_dir }}/terraform.tfstate"
-  register: tfstate_file
+    path: "{{ tinyllama_deploy_terraform_dir }}/terraform.tfstate"
+  register: tinyllama_deploy_tfstate_file
 
 - name: Fail if Terraform state not found
   ansible.builtin.fail:
     msg: |
-      Terraform state file not found at {{ terraform_dir }}/terraform.tfstate
-      Please run 'terraform apply' first in {{ terraform_dir }}
-  when: not tfstate_file.stat.exists
+      Terraform state file not found at {{ tinyllama_deploy_terraform_dir }}/terraform.tfstate
+      Please run 'terraform apply' first in {{ tinyllama_deploy_terraform_dir }}
+  when: not tinyllama_deploy_tfstate_file.stat.exists
 
 - name: Get Terraform outputs
   ansible.builtin.command:
     cmd: terraform output -json
-    chdir: "{{ terraform_dir }}"
-  register: terraform_outputs
+    chdir: "{{ tinyllama_deploy_terraform_dir }}"
+  register: tinyllama_deploy_terraform_outputs
   changed_when: false
 
 - name: Parse Terraform outputs
   ansible.builtin.set_fact:
-    tf_output: "{{ terraform_outputs.stdout | from_json }}"
+    tinyllama_deploy_tf_output: "{{ tinyllama_deploy_terraform_outputs.stdout | from_json }}"
 
 - name: Extract cluster information
   ansible.builtin.set_fact:
-    gke_cluster_name: "{{ tf_output.gke_cluster_name.value }}"
-    gke_cluster_region: "{{ tf_output.gke_cluster_region.value }}"
-    gcp_project_id: "{{ tf_output.project_id.value }}"
+    tinyllama_deploy_gke_cluster_name: "{{ tinyllama_deploy_tf_output.gke_cluster_name.value }}"
+    tinyllama_deploy_gke_cluster_region: "{{ tinyllama_deploy_tf_output.gke_cluster_region.value }}"
+    tinyllama_deploy_gcp_project_id: "{{ tinyllama_deploy_tf_output.project_id.value }}"
 
 - name: Display cluster information
   ansible.builtin.debug:
     msg:
-      - "GCP Project: {{ gcp_project_id }}"
-      - "GKE Cluster: {{ gke_cluster_name }}"
-      - "Region: {{ gke_cluster_region }}"
+      - "GCP Project: {{ tinyllama_deploy_gcp_project_id }}"
+      - "GKE Cluster: {{ tinyllama_deploy_gke_cluster_name }}"
+      - "Region: {{ tinyllama_deploy_gke_cluster_region }}"

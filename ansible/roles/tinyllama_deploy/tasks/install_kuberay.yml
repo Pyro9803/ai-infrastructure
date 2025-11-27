@@ -3,32 +3,32 @@
 
 - name: Check if Helm is installed
   ansible.builtin.command: helm version --short
-  register: helm_version
+  register: tinyllama_deploy_helm_version
   changed_when: false
   failed_when: false
 
 - name: Verify Helm installation
   ansible.builtin.assert:
     that:
-      - helm_version.rc == 0
+      - tinyllama_deploy_helm_version.rc == 0
     fail_msg: "Helm is not installed. Please install Helm first: https://helm.sh/docs/intro/install/"
-    success_msg: "Helm is installed: {{ helm_version.stdout }}"
+    success_msg: "Helm is installed: {{ tinyllama_deploy_helm_version.stdout }}"
 
 - name: Check if KubeRay namespace exists
   ansible.builtin.command: kubectl get namespace kuberay-system
-  register: kuberay_namespace_check
+  register: tinyllama_deploy_kuberay_namespace_check
   changed_when: false
   failed_when: false
 
 - name: Create KubeRay namespace
   ansible.builtin.command: kubectl create namespace kuberay-system
-  when: kuberay_namespace_check.rc != 0
-  register: namespace_created
+  when: tinyllama_deploy_kuberay_namespace_check.rc != 0
+  register: tinyllama_deploy_namespace_created
 
 - name: Add KubeRay Helm repository
   ansible.builtin.command: helm repo add kuberay https://ray-project.github.io/kuberay-helm/
-  register: helm_repo_add
-  changed_when: "'has been added' in helm_repo_add.stdout"
+  register: tinyllama_deploy_helm_repo_add
+  changed_when: "'has been added' in tinyllama_deploy_helm_repo_add.stdout"
   failed_when: false
 
 - name: Update Helm repositories
@@ -37,50 +37,50 @@
 
 - name: Check if KubeRay operator is already installed
   ansible.builtin.command: helm list -o json
-  register: helm_list
+  register: tinyllama_deploy_helm_list
   changed_when: false
 
 - name: Parse Helm list output
   ansible.builtin.set_fact:
-    kuberay_installed: "{{ (helm_list.stdout | from_json | selectattr('name', 'equalto', 'kuberay-operator') | list | length) > 0 }}"
+    tinyllama_deploy_kuberay_installed: "{{ (tinyllama_deploy_helm_list.stdout | from_json | selectattr('name', 'equalto', 'kuberay-operator') | list | length) > 0 }}"
 
 - name: Install KubeRay operator
   ansible.builtin.command: >
     helm install kuberay-operator kuberay/kuberay-operator
-    --version {{ kuberay.operator_version }}
+    --version {{ tinyllama_deploy_kuberay.operator_version }}
     --wait
-    --timeout {{ kuberay.install_timeout }}
-  when: not kuberay_installed
-  register: kuberay_install
+    --timeout {{ tinyllama_deploy_kuberay.install_timeout }}
+  when: not tinyllama_deploy_kuberay_installed
+  register: tinyllama_deploy_kuberay_install
   notify: kuberay_installed
 
 - name: Upgrade KubeRay operator if already installed
   ansible.builtin.command: >
     helm upgrade kuberay-operator kuberay/kuberay-operator
-    --version {{ kuberay.operator_version }}
+    --version {{ tinyllama_deploy_kuberay.operator_version }}
     --wait
-    --timeout {{ kuberay.install_timeout }}
-  when: kuberay_installed
-  register: kuberay_upgrade
-  changed_when: "'has been upgraded' in kuberay_upgrade.stdout"
+    --timeout {{ tinyllama_deploy_kuberay.install_timeout }}
+  when: tinyllama_deploy_kuberay_installed
+  register: tinyllama_deploy_kuberay_upgrade
+  changed_when: "'has been upgraded' in tinyllama_deploy_kuberay_upgrade.stdout"
 
 - name: Wait for KubeRay operator to be ready
   ansible.builtin.shell: |
     kubectl wait --for=condition=Ready \
     pod -n default \
     -l app.kubernetes.io/name=kuberay-operator \
-    --timeout={{ kuberay.ready_timeout }}s
-  register: operator_ready
+    --timeout={{ tinyllama_deploy_kuberay.ready_timeout }}s
+  register: tinyllama_deploy_operator_ready
   changed_when: false
   retries: 3
   delay: 10
-  until: operator_ready.rc == 0
+  until: tinyllama_deploy_operator_ready.rc == 0
 
 - name: Verify KubeRay operator deployment
   ansible.builtin.command: kubectl get pods -n default -l app.kubernetes.io/name=kuberay-operator
-  register: operator_status
+  register: tinyllama_deploy_operator_status
   changed_when: false
 
 - name: Display KubeRay operator status
   ansible.builtin.debug:
-    msg: "{{ operator_status.stdout_lines }}"
+    msg: "{{ tinyllama_deploy_operator_status.stdout_lines }}"

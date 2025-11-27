@@ -3,15 +3,15 @@
 
 - name: Check if KubeRay operator is installed
   ansible.builtin.command: kubectl get pods --all-namespaces -l app.kubernetes.io/name=kuberay-operator
-  register: kuberay_check
+  register: tinyllama_deploy_kuberay_check
   changed_when: false
   failed_when: false
 
 - name: Verify KubeRay operator
   ansible.builtin.assert:
     that:
-      - kuberay_check.rc == 0
-      - "'Running' in kuberay_check.stdout"
+      - tinyllama_deploy_kuberay_check.rc == 0
+      - "'Running' in tinyllama_deploy_kuberay_check.stdout"
     fail_msg: "KubeRay operator is not installed or not running. Please install it first."
     success_msg: "KubeRay operator is running"
 
@@ -20,17 +20,17 @@
     kubectl get nodes -o json | \
     jq -r '.items[] | select(.status.allocatable."nvidia.com/gpu" != null) | 
     "\(.metadata.name) - GPU: \(.status.allocatable."nvidia.com/gpu")"'
-  register: gpu_nodes
+  register: tinyllama_deploy_gpu_nodes
   changed_when: false
 
 - name: Display GPU nodes
   ansible.builtin.debug:
-    msg: "{{ gpu_nodes.stdout_lines }}"
+    msg: "{{ tinyllama_deploy_gpu_nodes.stdout_lines }}"
 
 - name: Verify GPU availability
   ansible.builtin.assert:
     that:
-      - gpu_nodes.stdout_lines | length > 0
+      - tinyllama_deploy_gpu_nodes.stdout_lines | length > 0
     fail_msg: "No GPU nodes found in the cluster"
     success_msg: "GPU nodes are available"
-  when: resources.gpu_required | bool
+  when: tinyllama_deploy_resources.gpu_required | bool

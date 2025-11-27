@@ -3,7 +3,7 @@
 
 - name: namespace_created
   ansible.builtin.debug:
-    msg: "Namespace {{ kubernetes.namespace }} has been created"
+    msg: "Namespace {{ tinyllama_deploy_kubernetes.namespace }} has been created"
 
 - name: kuberay_installed
   ansible.builtin.debug:
@@ -11,15 +11,15 @@
 
 - name: configmap_created
   ansible.builtin.debug:
-    msg: "ConfigMap {{ kubernetes.config_map_name }} has been created"
+    msg: "ConfigMap {{ tinyllama_deploy_kubernetes.config_map_name }} has been created"
 
 - name: rayservice_deleted
   ansible.builtin.debug:
-    msg: "Old RayService {{ kubernetes.deployment_name }} has been deleted"
+    msg: "Old RayService {{ tinyllama_deploy_kubernetes.deployment_name }} has been deleted"
 
 - name: rayservice_deployed
   ansible.builtin.debug:
-    msg: "RayService {{ kubernetes.deployment_name }} has been deployed"
+    msg: "RayService {{ tinyllama_deploy_kubernetes.deployment_name }} has been deployed"
 
 - name: deployment_verified
   ansible.builtin.debug:

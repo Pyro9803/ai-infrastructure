@@ -3,37 +3,37 @@
 
 - name: Get service name
   ansible.builtin.shell: |
-    kubectl get svc -n {{ kubernetes.namespace }} \
-    -l ray.io/cluster={{ ray_cluster_name }},ray.io/serve=true \
+    kubectl get svc -n {{ tinyllama_deploy_kubernetes.namespace }} \
+    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/serve=true \
     -o jsonpath='{.items[0].metadata.name}'
-  register: service_name_output
+  register: tinyllama_deploy_service_name_output
   changed_when: false
 
 - name: Set service name fact
   ansible.builtin.set_fact:
-    service_name: "{{ service_name_output.stdout }}"
+    tinyllama_deploy_service_name: "{{ tinyllama_deploy_service_name_output.stdout }}"
 
 - name: Display service information
   ansible.builtin.debug:
-    msg: "Service: {{ service_name }}"
+    msg: "Service: {{ tinyllama_deploy_service_name }}"
 
 - name: Test model endpoint (from within cluster)
   ansible.builtin.shell: |
-    kubectl exec -n {{ kubernetes.namespace }} {{ head_pod_name }} -c ray-head -- \
+    kubectl exec -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_head_pod_name }} -c ray-head -- \
     curl -X POST http://localhost:8000/ \
     -H "Content-Type: application/json" \
     -d '{
-      "messages": [{"role": "user", "content": "{{ model.test_prompt }}"}],
-      "max_tokens": {{ model.test_max_tokens }}
+      "messages": [{"role": "user", "content": "{{ tinyllama_deploy_model.test_prompt }}"}],
+      "max_tokens": {{ tinyllama_deploy_model.test_max_tokens }}
     }'
-  register: model_test
+  register: tinyllama_deploy_model_test
   changed_when: false
   failed_when: false
-  when: testing.test_endpoint | bool
+  when: tinyllama_deploy_testing.test_endpoint | bool
 
 - name: Display test result
   ansible.builtin.debug:
-    msg: "{{ model_test.stdout | from_json }}"
+    msg: "{{ tinyllama_deploy_model_test.stdout | from_json }}"
   when:
-    - testing.test_endpoint | bool
-    - model_test.rc == 0
+    - tinyllama_deploy_testing.test_endpoint | bool
+    - tinyllama_deploy_model_test.rc == 0

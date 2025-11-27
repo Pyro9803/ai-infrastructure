@@ -36,7 +36,7 @@
 - name: Include testing tasks
   ansible.builtin.include_tasks: test.yml
   tags: [verify, test]
-  when: testing.enabled | bool
+  when: tinyllama_deploy_testing.enabled | bool
 
 - name: Display deployment summary
   ansible.builtin.include_tasks: summary.yml
