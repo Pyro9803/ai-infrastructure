@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # REPOSITORY="${AR_REPOSITORY:-open-webui}"
 # REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
 # GCP Project Configuration
-PROJECT_ID="aerial-jigsaw-472804-r0"
+PROJECT_ID="tutorial-475402"
 REGION="asia-southeast1"
 REPOSITORY="dev-artifact-repo"
 REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"

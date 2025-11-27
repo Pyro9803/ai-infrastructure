@@ -5,7 +5,7 @@
 deploy_environment: dev
 
 # Project paths
-project_root: "{{ playbook_dir }}/../../.."
+project_root: "{{ playbook_dir }}/../.."
 deployment_source_dir: "{{ project_root }}/ray/tinyllama"
 
 # Kubernetes configuration
@@ -46,6 +46,6 @@ monitoring:
 
 # Deployment configuration
 deployment:
-  strategy: replace  # replace or rolling
+  strategy: replace # replace or rolling
   cleanup_on_failure: true
   wait_for_ready: true

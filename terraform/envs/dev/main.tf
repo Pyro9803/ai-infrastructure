@@ -60,6 +60,8 @@ module "gke" {
   # Limit node image-pull permission to a single Artifact Registry repository
   artifact_registry_repo_name     = var.repositories[0].repository_id
   artifact_registry_repo_location = var.region
+
+  depends_on = [module.artifact_registry]
 }
 
 # Data for Kubernetes provider (use current Google credentials to get token)
@@ -106,8 +108,8 @@ module "storage" {
   source     = "../../modules/storage"
   project_id = var.project_id
   # WARNING: bucket names must be globally unique. Change to a unique name for your project.
-  bucket_name = "ai-infra-dev-storage-${var.project_id}"
-  location    = var.region
+  bucket_name   = "ai-infra-dev-storage-${var.project_id}"
+  location      = var.region
   force_destroy = false
 }
 
@@ -120,19 +122,25 @@ module "service_account" {
   project_id   = var.project_id
 }
 
+resource "kubernetes_namespace" "wi_namespace" {
+  metadata {
+    name = var.k8s_namespace
+  }
+}
+
 module "wif_gke" {
   source = "../../modules/wif_gke"
 
-  project_id         = var.project_id
-  gsa_name           = var.gsa_name
-  gsa_display_name   = var.gsa_display_name
+  project_id       = var.project_id
+  gsa_name         = var.gsa_name
+  gsa_display_name = var.gsa_display_name
   # repo_name          = "dev-artifact-repo"
   # repo_location      = var.region
-  namespace          = var.k8s_namespace
-  ksa_name           = var.k8s_service_account_name
+  namespace = var.k8s_namespace
+  ksa_name  = var.k8s_service_account_name
 
   # Grant storage IAM after the storage bucket is created
   storage_bucket_name = module.storage.bucket_name
 
-  depends_on = [module.gke, module.artifact_registry, module.storage]
+  depends_on = [module.gke, module.artifact_registry, module.storage, kubernetes_namespace.wi_namespace]
 }

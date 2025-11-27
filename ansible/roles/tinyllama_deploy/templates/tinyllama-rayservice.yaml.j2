@@ -61,7 +61,11 @@ spec:
       maxReplicas: 1
       groupName: gpu-worker-group
       rayStartParams:
+{% if resources.gpu_required %}
+        num-gpus: '1'
+{% else %}
         num-gpus: '0'
+{% endif %}
       template:
         spec:
           containers:
@@ -86,12 +90,23 @@ spec:
               limits:
                 cpu: 2
                 memory: 8Gi
+{% if resources.gpu_required %}
+                nvidia.com/gpu: 1
+{% endif %}
               requests:
                 cpu: 1
                 memory: 4Gi
+{% if resources.gpu_required %}
+                nvidia.com/gpu: 1
+{% endif %}
             env:
+{% if resources.gpu_required %}
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0"
+{% else %}
             - name: VLLM_TARGET_DEVICE
               value: "cpu"
+{% endif %}
             - name: PYTHONPATH
               value: "/home/ray:$PYTHONPATH"
             volumeMounts:
@@ -102,3 +117,13 @@ spec:
           - name: vllm-code
             configMap:
               name: vllm-app-code
+{% if resources.gpu_required %}
+          tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: nvidia.com/gpu-type
+            operator: Equal
+            value: nvidia-tesla-t4
+            effect: NoSchedule
+{% endif %}

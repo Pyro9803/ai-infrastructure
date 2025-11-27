@@ -7,9 +7,9 @@ deploy_environment: dev
 terraform_env: "{{ deploy_environment }}"
 
 # Paths
-project_root: "{{ playbook_dir }}/../../.."
-terraform_dir: "{{ project_root }}/src/terraform/envs/{{ terraform_env }}"
-deployment_dir: "{{ project_root }}/src/ray/tinyllama"
+project_root: "{{ playbook_dir }}/../.."
+terraform_dir: "{{ project_root }}/terraform/envs/{{ terraform_env }}"
+deployment_dir: "{{ project_root }}/ray/tinyllama"
 
 # Kubernetes
 kubernetes:

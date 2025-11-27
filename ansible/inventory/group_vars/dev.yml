@@ -5,7 +5,7 @@ deploy_environment: dev
 
 # Terraform configuration
 terraform_env: dev
-terraform_dir: "{{ playbook_dir }}/../terraform/envs/{{ terraform_env }}"
+terraform_dir: "{{ project_root }}/terraform/envs/{{ terraform_env }}"
 
 # Less strict timeouts for dev
 timeouts:
@@ -25,3 +25,8 @@ monitoring:
 # Smaller resources for dev
 model:
   replica_count: 1
+
+# Resource requirements
+resources:
+  gpu_required: false
+  min_gpu_nodes: 0

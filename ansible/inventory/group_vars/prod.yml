@@ -25,4 +25,4 @@ monitoring:
 
 # Production resources (can scale based on needs)
 model:
-  replica_count: 1  # Increase for HA
+  replica_count: 1 # Increase for HA

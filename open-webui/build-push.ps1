@@ -14,8 +14,8 @@ function Print-Warn($msg)  { Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
 function Print-Error($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
 # ----- Configuration -----
-$PROJECT_ID  = "ai-infra-475703"
-$REGION      = "us-central1"
+$PROJECT_ID  = "tutorial-475402"
+$REGION      = "asia-southeast1"
 $REPOSITORY  = "dev-artifact-repo"
 $REGISTRY    = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}"
 

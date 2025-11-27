@@ -11,6 +11,11 @@ output "gke_cluster_region" {
   value       = var.region
 }
 
+output "gke_cluster_name" {
+  description = "GKE Cluster Name"
+  value       = module.gke.gke_cluster_name
+}
+
 output "gke_cluster_location" {
   description = "GKE Cluster Location (zone or region)"
   value       = var.gke_use_zonal_cluster ? var.gke_zone : var.region
@@ -34,7 +39,7 @@ output "service_account_email" {
 # Helpful commands for Ansible
 output "ansible_commands" {
   description = "Commands to run Ansible deployment"
-  value = <<-EOT
+  value       = <<-EOT
     # Get cluster credentials
     gcloud container clusters get-credentials ${module.gke.gke_cluster_name} \
       --region ${var.gke_use_zonal_cluster ? var.gke_zone : var.region} \
