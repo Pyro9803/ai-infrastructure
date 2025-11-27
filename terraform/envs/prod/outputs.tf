@@ -45,7 +45,7 @@ output "service_account_email" {
 # Helpful commands for Ansible
 output "ansible_commands" {
   description = "Commands to run Ansible deployment"
-  value = <<-EOT
+  value       = <<-EOT
     # Get cluster credentials
     gcloud container clusters get-credentials ${module.gke.gke_cluster_name} \
       --region ${var.gke_use_zonal_cluster ? var.gke_zone : var.region} \
