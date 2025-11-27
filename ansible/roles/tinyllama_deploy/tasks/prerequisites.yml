@@ -17,8 +17,9 @@
 
 - name: Check GPU nodes availability
   ansible.builtin.shell: |
+    set -o pipefail
     kubectl get nodes -o json | \
-    jq -r '.items[] | select(.status.allocatable."nvidia.com/gpu" != null) | 
+    jq -r '.items[] | select(.status.allocatable."nvidia.com/gpu" != null) |
     "\(.metadata.name) - GPU: \(.status.allocatable."nvidia.com/gpu")"'
   register: tinyllama_deploy_gpu_nodes
   changed_when: false

@@ -24,6 +24,7 @@
   ansible.builtin.command: kubectl create namespace kuberay-system
   when: tinyllama_deploy_kuberay_namespace_check.rc != 0
   register: tinyllama_deploy_namespace_created
+  changed_when: true
 
 - name: Add KubeRay Helm repository
   ansible.builtin.command: helm repo add kuberay https://ray-project.github.io/kuberay-helm/
@@ -42,7 +43,9 @@
 
 - name: Parse Helm list output
   ansible.builtin.set_fact:
-    tinyllama_deploy_kuberay_installed: "{{ (tinyllama_deploy_helm_list.stdout | from_json | selectattr('name', 'equalto', 'kuberay-operator') | list | length) > 0 }}"
+    tinyllama_deploy_kuberay_installed:
+      "{{ (tinyllama_deploy_helm_list.stdout | from_json |
+      selectattr('name', 'equalto', 'kuberay-operator') | list | length) > 0 }}"
 
 - name: Install KubeRay operator
   ansible.builtin.command: >
@@ -53,6 +56,7 @@
   when: not tinyllama_deploy_kuberay_installed
   register: tinyllama_deploy_kuberay_install
   notify: kuberay_installed
+  changed_when: true
 
 - name: Upgrade KubeRay operator if already installed
   ansible.builtin.command: >
@@ -65,10 +69,10 @@
   changed_when: "'has been upgraded' in tinyllama_deploy_kuberay_upgrade.stdout"
 
 - name: Wait for KubeRay operator to be ready
-  ansible.builtin.shell: |
-    kubectl wait --for=condition=Ready \
-    pod -n default \
-    -l app.kubernetes.io/name=kuberay-operator \
+  ansible.builtin.command: >
+    kubectl wait --for=condition=Ready
+    pod -n default
+    -l app.kubernetes.io/name=kuberay-operator
     --timeout={{ tinyllama_deploy_kuberay.ready_timeout }}s
   register: tinyllama_deploy_operator_ready
   changed_when: false

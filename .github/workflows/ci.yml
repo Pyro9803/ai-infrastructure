@@ -51,4 +51,5 @@ jobs:
 
       - name: Run Ansible Lint
         run: |
-          ansible-lint ansible/
+          cd ansible
+          ansible-lint .

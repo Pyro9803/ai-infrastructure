@@ -12,6 +12,7 @@
   when: tinyllama_deploy_namespace_check.rc != 0
   register: tinyllama_deploy_namespace_created
   notify: namespace_created
+  changed_when: true
 
 - name: Namespace status
   ansible.builtin.debug:

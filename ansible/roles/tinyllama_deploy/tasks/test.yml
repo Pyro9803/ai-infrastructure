@@ -2,9 +2,9 @@
 # Testing tasks
 
 - name: Get service name
-  ansible.builtin.shell: |
-    kubectl get svc -n {{ tinyllama_deploy_kubernetes.namespace }} \
-    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/serve=true \
+  ansible.builtin.command: >
+    kubectl get svc -n {{ tinyllama_deploy_kubernetes.namespace }}
+    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/serve=true
     -o jsonpath='{.items[0].metadata.name}'
   register: tinyllama_deploy_service_name_output
   changed_when: false
@@ -18,10 +18,10 @@
     msg: "Service: {{ tinyllama_deploy_service_name }}"
 
 - name: Test model endpoint (from within cluster)
-  ansible.builtin.shell: |
-    kubectl exec -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_head_pod_name }} -c ray-head -- \
-    curl -X POST http://localhost:8000/ \
-    -H "Content-Type: application/json" \
+  ansible.builtin.command: >
+    kubectl exec -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_head_pod_name }} -c ray-head --
+    curl -X POST http://localhost:8000/
+    -H "Content-Type: application/json"
     -d '{
       "messages": [{"role": "user", "content": "{{ tinyllama_deploy_model.test_prompt }}"}],
       "max_tokens": {{ tinyllama_deploy_model.test_max_tokens }}

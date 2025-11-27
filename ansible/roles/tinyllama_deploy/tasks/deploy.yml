@@ -11,6 +11,7 @@
   ansible.builtin.command: kubectl delete configmap -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_kubernetes.config_map_name }}
   when: tinyllama_deploy_configmap_check.rc == 0
   register: tinyllama_deploy_configmap_deleted
+  changed_when: true
 
 - name: Generate vllm_app.py from template
   ansible.builtin.template:
@@ -36,6 +37,7 @@
   ansible.builtin.debug:
     msg: "ConfigMap created successfully"
   when: tinyllama_deploy_configmap_created.changed
+  tags: [skip_ansible_lint]
 
 - name: Check if RayService already exists
   ansible.builtin.command: kubectl get rayservice -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_kubernetes.deployment_name }}
@@ -48,6 +50,7 @@
   when: tinyllama_deploy_rayservice_check.rc == 0
   register: tinyllama_deploy_rayservice_deleted
   notify: rayservice_deleted
+  changed_when: true
 
 - name: Wait for old RayService to be deleted
   ansible.builtin.command: kubectl get rayservice -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_kubernetes.deployment_name }}
@@ -57,6 +60,8 @@
   delay: 10
   failed_when: false
   when: tinyllama_deploy_rayservice_deleted.changed
+  changed_when: false
+  tags: [skip_ansible_lint]
 
 - name: Generate RayService manifest
   ansible.builtin.template:
@@ -69,6 +74,7 @@
     cmd: kubectl apply -f {{ tinyllama_deploy_deployment_dir }}/tinyllama-rayservice.yaml
   register: tinyllama_deploy_rayservice_applied
   notify: rayservice_deployed
+  changed_when: true
 
 - name: Wait for RayService to be created
   ansible.builtin.command: kubectl get rayservice -n {{ tinyllama_deploy_kubernetes.namespace }} {{ tinyllama_deploy_kubernetes.deployment_name }}
@@ -104,8 +110,8 @@
     msg: "Ray Cluster: {{ tinyllama_deploy_ray_cluster_name }}"
 
 - name: Wait for head pod to be created
-  ansible.builtin.shell: |
-    kubectl get pod -n {{ tinyllama_deploy_kubernetes.namespace }} \
+  ansible.builtin.command: >
+    kubectl get pod -n {{ tinyllama_deploy_kubernetes.namespace }}
     -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=head
   register: tinyllama_deploy_head_pod_created
   until: tinyllama_deploy_head_pod_created.rc == 0
@@ -114,17 +120,17 @@
   changed_when: false
 
 - name: Wait for head pod to be ready
-  ansible.builtin.shell: |
-    kubectl wait --for=condition=Ready \
-    pod -n {{ tinyllama_deploy_kubernetes.namespace }} \
-    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=head \
+  ansible.builtin.command: >
+    kubectl wait --for=condition=Ready
+    pod -n {{ tinyllama_deploy_kubernetes.namespace }}
+    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=head
     --timeout={{ tinyllama_deploy_timeouts.pod_ready }}s
   register: tinyllama_deploy_head_pod_ready
   changed_when: false
 
 - name: Wait for worker pods to be created
-  ansible.builtin.shell: |
-    kubectl get pod -n {{ tinyllama_deploy_kubernetes.namespace }} \
+  ansible.builtin.command: >
+    kubectl get pod -n {{ tinyllama_deploy_kubernetes.namespace }}
     -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=worker
   register: tinyllama_deploy_worker_pod_created
   until: tinyllama_deploy_worker_pod_created.rc == 0
@@ -133,10 +139,10 @@
   changed_when: false
 
 - name: Wait for worker pods to be ready
-  ansible.builtin.shell: |
-    kubectl wait --for=condition=Ready \
-    pod -n {{ tinyllama_deploy_kubernetes.namespace }} \
-    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=worker \
+  ansible.builtin.command: >
+    kubectl wait --for=condition=Ready
+    pod -n {{ tinyllama_deploy_kubernetes.namespace }}
+    -l ray.io/cluster={{ tinyllama_deploy_ray_cluster_name }},ray.io/node-type=worker
     --timeout={{ tinyllama_deploy_timeouts.pod_ready }}s
   register: tinyllama_deploy_worker_pod_ready
   changed_when: false
