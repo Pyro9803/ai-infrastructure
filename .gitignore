@@ -13,3 +13,6 @@ src/terraform/envs/*/*.tfstate.backup
 **/terraform.tfstate.*
 **/.terraform.tfstate.*
 private/*
+
+.vscode
+ai-venv/
