@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform Init & Validate (Dev)
+        run: |
+          cd terraform/envs/dev
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform Init & Validate (Prod)
+        run: |
+          cd terraform/envs/prod
+          terraform init -backend=false
+          terraform validate
+
+  ansible:
+    name: Ansible
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint
+
+      - name: Run Ansible Lint
+        run: |
+          ansible-lint ansible/
